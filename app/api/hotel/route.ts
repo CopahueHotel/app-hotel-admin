@@ -1,4 +1,5 @@
 import { database } from '@/lib/hotel-db';
+import { requireSession, checkOrigin } from '@/lib/hotel-auth';
 import { z } from 'zod';
 export const dynamic='force-dynamic';
 const date=z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine(v=>!isNaN(Date.parse(v))&&new Date(v).toISOString().slice(0,10)===v,'Fecha inválida');
@@ -34,15 +35,16 @@ add("INSERT OR IGNORE INTO cash_movements VALUES ('opening-cash','2026-10-01','E
 add("INSERT OR IGNORE INTO cash_movements VALUES ('deposit-1','2026-10-01','Banco',10000000,'Hotel','Cobro','demo-1','Seña · Lucía Fernández')");
 add("INSERT OR IGNORE INTO expenses VALUES ('expense-1','2026-10-01','2026-10-05','Proveedor de energía','Electricidad','Compartido','Servicios',8500000,'Fijo')");
 add("INSERT OR IGNORE INTO settings VALUES ('mealPrice','0')");add("INSERT OR IGNORE INTO settings VALUES ('initialized','1')");await db.batch(statements);}
-export async function GET(){try{const db=database();await seed(db);const tables=['rooms','bookings','products','stock_movements','sales','expenses','cash_movements','daily_closes','settings','meal_overrides','audit_log'];const rs=await db.batch(tables.map(t=>db.prepare(`SELECT * FROM ${t}`)));return Response.json(Object.fromEntries(tables.map((t,i)=>[t,rs[i].results])),{headers:{'Cache-Control':'no-store'}});}catch(e){console.error(e);return Response.json({error:'No se pudieron cargar los registros. Intentá nuevamente.'},{status:503});}}
+export async function GET(req:Request){const rejected=await requireSession(req);if(rejected)return rejected;try{const db=database();await seed(db);const tables=['rooms','bookings','products','stock_movements','sales','expenses','cash_movements','daily_closes','settings','meal_overrides','audit_log'];const rs=await db.batch(tables.map(t=>db.prepare(`SELECT * FROM ${t}`)));return Response.json(Object.fromEntries(tables.map((t,i)=>[t,rs[i].results])),{headers:{'Cache-Control':'no-store'}});}catch(e){console.error(e);return Response.json({error:'No se pudieron cargar los registros. Intentá nuevamente.'},{status:503});}}
 export async function POST(req:Request){
+const rejected=await requireSession(req);if(rejected)return rejected;const originError=checkOrigin(req);if(originError)return originError;
 let requestKey:string|undefined, fingerprint:string|undefined, requestDb:D1Database|undefined;
-try{if(req.headers.get('origin')&&req.headers.get('origin')!==new URL(req.url).origin)return Response.json({error:'Origen no permitido'},{status:403});const body:any=await req.json();if(!Object.hasOwn(schemas,body.action))throw new Error('Acción inválida');if(body.action==='sale'){if(body.data.booking==='external')body.data.booking='';if(body.data.product==='none')body.data.product='';}const d=schemas[body.action].parse(body.data);const db=database();requestDb=db;await seed(db);
+try{const body:any=await req.json();if(!Object.hasOwn(schemas,body.action))throw new Error('Acción inválida');if(body.action==='sale'){if(body.data.booking==='external')body.data.booking='';if(body.data.product==='none')body.data.product='';}const d=schemas[body.action].parse(body.data);const db=database();requestDb=db;await seed(db);
 requestKey=z.string().uuid().parse(req.headers.get('Idempotency-Key'));
 fingerprint=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(JSON.stringify({action:body.action,data:d}))))).map(v=>v.toString(16).padStart(2,'0')).join('');
 const previous=await db.prepare('SELECT fingerprint FROM operation_requests WHERE key=?').bind(requestKey).first<{fingerprint:string}>();
 if(previous)return Response.json(previous.fingerprint===fingerprint?{ok:true}:{error:'La clave de operacion ya se uso con otros datos.'},{status:previous.fingerprint===fingerprint?200:409});
-const actor=req.headers.get('oai-authenticated-user-email')||'Prueba';const stmts:any[]=[];const add=(sql:string,...v:any[])=>stmts.push(db.prepare(sql).bind(...v));const row=async(t:string,key:string,val:any)=>db.prepare(`SELECT * FROM ${t} WHERE ${key}=?`).bind(val).first();
+const actor='Acceso compartido de prueba';const stmts:any[]=[];const add=(sql:string,...v:any[])=>stmts.push(db.prepare(sql).bind(...v));const row=async(t:string,key:string,val:any)=>db.prepare(`SELECT * FROM ${t} WHERE ${key}=?`).bind(val).first();
 add('INSERT INTO operation_requests (key,fingerprint,created) VALUES (?,?,?)',requestKey,fingerprint,new Date().toISOString());
 if(d.date&&['sale','payment','expense','payExpense','stock','purchase','transfer','movement','meal'].includes(body.action)){if(await db.prepare('SELECT date FROM daily_closes WHERE date>=? LIMIT 1').bind(d.date).first())throw new Error('Ese día ya está cerrado. Usá una fecha posterior al último cierre.');}
 const cash=(date:string,acc:string,amount:number,ar:string,kind:string,ref:string,label:string)=>add('INSERT INTO cash_movements VALUES (?,?,?,?,?,?,?,?)',id(),date,acc,amount,ar,kind,ref,label);

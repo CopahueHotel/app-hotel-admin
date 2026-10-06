@@ -48,4 +48,4 @@ next-env.d.ts
 # Datos y archivos locales
 *.tsbuildinfo
 /backups/
-/.dev.vars
+/.dev.vars*

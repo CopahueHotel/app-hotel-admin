@@ -15,9 +15,10 @@
 - Historial, informes de fondos y exportación CSV compatible con Excel.
 - Precio configurable de comida externa y base persistente.
 - Idempotencia de operaciones: la interfaz reutiliza la clave ante un reintento; la API registra la clave junto con los movimientos y el historial en un único batch.
+- Login de prueba con contraseña compartida, sesiones persistentes de ocho horas, cierre de sesión y protección de pantallas y API en el servidor; límite global de 20 intentos de acceso cada 15 minutos.
 
 ## Pendiente para uso operativo
-- Usuarios propios y permisos de superadministrador, gerente y consulta en backend.
+- Usuarios individuales y permisos de superadministrador, gerente y consulta en backend; el login compartido de prueba no tiene roles ni identifica a cada operador.
 - Edición completa de reservas, habitaciones, productos y tarifas.
 - Apertura real de saldos, stock, reservas y deudas.
 - Devoluciones, anulaciones y correcciones posteriores a cierres.
@@ -39,3 +40,5 @@ Se verificaron tipos, compilación y 15 operaciones sobre SQLite: superposicione
 
 ## Pruebas locales de integridad
 `npm.cmd test` ejecuta la API contra bases temporales D1/Miniflare sin persistencia. Cubre cierres y comidas concurrentes, cambio de MP tras servir, reintentos y claves duplicadas, rollback, migración de comidas históricas, cargos, cobros, compras, pagos a proveedores, transferencias, stock y superposición de reservas. No usa los registros de `.wrangler/state/`.
+
+Las pruebas de acceso también cubren lectura y escritura anónimas, tokens falsos, contraseña incorrecta, origen cruzado, cookies HTTPS, vencimiento, revocación, cambio de contraseña, falta de configuración y límite concurrente de intentos. La revisión visual en navegador y el despliegue real con HTTPS siguen pendientes.

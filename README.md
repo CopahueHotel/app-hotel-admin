@@ -17,11 +17,14 @@ La interfaz usa **React y TypeScript**, con Vinext/Vite y CSS. Necesita un servi
 ```powershell
 npm.cmd ci
 npm.cmd run db:local
+npm.cmd run auth:setup
 npm.cmd run dev
 ```
 
 4. Abrí **http://localhost:5173**. Si el puerto está ocupado, usá la dirección indicada por la terminal.
 5. Dejá la terminal abierta. `Ctrl+C` detiene el servidor.
+
+`auth:setup` genera una contraseña aleatoria, la muestra una vez y guarda solamente su hash en `.dev.vars`, fuera de Git. Guardá la contraseña en tu gestor de contraseñas e ingresala en la pantalla de acceso. Si el servidor cambia de puerto, editá `AUTH_ORIGIN` en `.dev.vars` para que coincida con la dirección que usás en el navegador, y reiniciá el servidor. El comando no sobrescribe un `.dev.vars` existente.
 
 `npm.cmd` evita el bloqueo de `npm.ps1` por PowerShell sin cambiar la política de ejecución. En macOS/Linux usá `npm` en lugar de `npm.cmd`.
 
@@ -41,11 +44,16 @@ Para verificar tipos y compilar:
 npm.cmd run check
 npm.cmd run build
 npm.cmd test
+npm.cmd run test:http
 ```
 
 Para probar la compilación se puede usar `npm.cmd start`; la terminal muestra la dirección. El desarrollo habitual se hace con `npm.cmd run dev`.
 
-Las pruebas usan bases temporales D1/Miniflare y no modifican los registros locales. Las llamadas directas a `POST /api/hotel` deben incluir `Idempotency-Key` con un UUID: reutilizá la misma clave y los mismos datos si reintentás una operación. Una operación nueva necesita una clave nueva; reutilizarla con datos diferentes devuelve 409. La interfaz lo gestiona durante la sesión de la página.
+`npm.cmd start` escucha en `127.0.0.1:8787` y carga el `.dev.vars` de la raíz. Para probarlo localmente, cambiá temporalmente `AUTH_ORIGIN` a `http://localhost:8787` y abrí esa dirección; devolvelo a `http://localhost:5173` al retomar desarrollo.
+
+Las pruebas usan bases temporales D1/Miniflare y no modifican los registros locales. Las llamadas directas a `/api/hotel` requieren una cookie de sesión válida. Los POST también requieren `Origin` igual a `AUTH_ORIGIN` e `Idempotency-Key` con un UUID: reutilizá la misma clave y los mismos datos si reintentás una operación. Una operación nueva necesita una clave nueva; reutilizarla con datos diferentes devuelve 409. La interfaz lo gestiona durante la sesión de la página.
+
+`test:http` requiere ejecutar `build` antes: comprueba el login y las protecciones HTTP/RSC de la app compilada, incluyendo la redirección HTTPS detrás de un proxy.
 
 ## Codex en VS Code
 
@@ -104,8 +112,26 @@ Para respaldarlos, detené el servidor y copiá esa carpeta fuera del repositori
 
 ## Uso real y alojamiento futuro
 
-La entrega no incluye autenticación propia ni permisos por rol. La privacidad del enlace online original depende de su plataforma y no se traslada a un alojamiento independiente.
+La app incluye acceso de prueba con una contraseña compartida y sesión de ocho horas. Protege pantallas y API en el servidor, almacena sesiones con tokens hasheados y revoca la sesión al salir. Tiene un límite global persistente de 20 intentos de ingreso cada 15 minutos. Sin configuración válida o sin migraciones, no permite acceder a los registros. Todavía no tiene usuarios individuales ni permisos por rol.
 
-Antes del uso real hay que completar usuarios/permisos en el servidor, apertura real, respaldos, regularizaciones y revisión funcional. Los encabezados `oai-authenticated-user-*` solo son confiables detrás de la plataforma original; no son autenticación válida en otro alojamiento.
+Antes del uso real hay que completar usuarios/permisos en el servidor, apertura real, respaldos, regularizaciones y revisión funcional. El login compartido no identifica a cada operador: los cambios se atribuyen a “Acceso compartido de prueba”. La API del hotel no usa encabezados `oai-authenticated-user-*` como identidad ni autorización.
+
+## Configurar acceso para testeo en un VPS
+
+En el VPS, dentro de la copia del repositorio y con Node.js instalado:
+
+```bash
+npm ci
+npm run db:local
+npm run auth:setup -- https://test.TU-DOMINIO
+npm run build
+npm start
+```
+
+Reemplazá la URL por el dominio real, sin ruta ni barra final. El hash y el origen quedan en `.dev.vars`; no subas ese archivo ni copies la base de esta PC. El VPS tendrá su propia base de prueba. `npm start` usa Miniflare local, no una base remota de Cloudflare.
+
+El servidor escucha solamente en `127.0.0.1:8787`. Configurá un proxy inverso con HTTPS para el dominio, que envíe las solicitudes a `http://127.0.0.1:8787` y conserve `Host`. No expongas Vite de desarrollo a Internet. El despliegue debe mantener el proceso activo y la carpeta `.wrangler/state/` entre reinicios y actualizaciones. La compra del VPS y la configuración de dominio, certificado y servicio quedan como pasos de alojamiento.
+
+Para cambiar la contraseña, detené el servidor, respaldá y renombrá `.dev.vars` fuera del repositorio y ejecutá nuevamente `auth:setup` con el mismo origen. Conservá las otras variables si ya agregaste alguna. Reiniciá el servidor: las sesiones anteriores se invalidan automáticamente. HTTP solo se admite para pruebas en localhost; en un dominio público el acceso exige configurar HTTPS.
 
 Se incluyen fuentes, componentes, migraciones, configuración y lockfile. Se excluyen dependencias instaladas (`node_modules`), base local, compilados, secretos e historial `.git`.

@@ -1,65 +1,7 @@
 import assert from 'node:assert/strict';
-import { readFileSync, readdirSync } from 'node:fs';
 import { test } from 'node:test';
-import { Miniflare } from 'miniflare';
-import ts from 'typescript';
-import { z } from 'zod';
 
-// Run the actual API against an isolated, nonpersistent D1/Miniflare database.
-// Only the binding is injected; SQL, triggers and transactional batches are real.
-async function fixture(t, beforeMigration) {
-  const mf = new Miniflare({
-    modules: true, script: 'export default {fetch(){return new Response("ok")}}',
-    compatibilityDate: '2026-05-15', d1Databases: ['DB'],
-  });
-  t.after(() => mf.dispose());
-  const raw = await mf.getD1Database('DB');
-  const migrations = readdirSync('drizzle').filter(f => f.endsWith('.sql')).sort();
-  for (const file of migrations) {
-    if (file.startsWith('0002') && beforeMigration) await beforeMigration(raw);
-    for (const sql of readFileSync(`drizzle/${file}`, 'utf8').split('--> statement-breakpoint')) {
-      if (sql.trim()) await raw.prepare(sql).run();
-    }
-  }
-  let gate;
-  const db = {
-    prepare(sql) {
-      const wrap = (statement, values = []) => ({
-        sql, values, statement,
-        bind(...args) { return wrap(statement.bind(...args), args); },
-        first(...args) { return statement.first(...args); },
-      });
-      return wrap(raw.prepare(sql));
-    },
-    async batch(statements) {
-      if (gate) await gate(statements);
-      return raw.batch(statements.map(s => s.statement));
-    },
-  };
-  const code = ts.transpileModule(readFileSync('app/api/hotel/route.ts', 'utf8'), {
-    compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS },
-  }).outputText;
-  const api = {};
-  const errors = [];
-  new Function('require', 'exports', 'console', code)(name => {
-    if (name === '@/lib/hotel-db') return { database: () => db };
-    if (name === 'zod') return { z };
-    throw Error(`Unexpected import: ${name}`);
-  }, api, { ...console, error: error => errors.push(error) });
-  assert.equal((await api.GET()).status, 200);
-  async function post(action, data, key = crypto.randomUUID()) {
-    const r = await api.POST(new Request('http://localhost/api/hotel', {
-      method: 'POST', headers: { 'Content-Type': 'application/json', ...(key ? { 'Idempotency-Key': key } : {}) },
-      body: JSON.stringify({ action, data }),
-    }));
-    const result = { status: r.status, ...await r.json() };
-    if (result.status >= 500) throw new AggregateError(errors, result.error);
-    return result;
-  }
-  const one = (sql, ...args) => raw.prepare(sql).bind(...args).first();
-  const count = async table => (await one(`SELECT COUNT(*) n FROM ${table}`)).n;
-  return { raw, post, one, count, setGate(fn) { gate = fn; } };
-}
+import { fixture } from './helpers/hotel-fixture.mjs';
 
 const sale = {
   date: '2026-10-02', booking: 'demo-1', customer: 'Test', kind: 'Incluida',

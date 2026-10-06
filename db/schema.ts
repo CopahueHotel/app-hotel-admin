@@ -12,3 +12,5 @@ export const settings=sqliteTable('settings',{key:text('key').primaryKey(),value
 export const meals=sqliteTable('meal_overrides',{booking:text('booking').notNull().references(()=>bookings.id),date:text('date').notNull(),meal:text('meal').notNull()},t=>[primaryKey({columns:[t.booking,t.date]})]);
 export const audits=sqliteTable('audit_log',{id:text('id').primaryKey(),created:text('created').notNull(),actor:text('actor').notNull(),action:text('action').notNull(),detail:text('detail').notNull()});
 export const requests=sqliteTable('operation_requests',{key:text('key').primaryKey(),fingerprint:text('fingerprint').notNull(),created:text('created').notNull()});
+export const authSessions=sqliteTable('auth_sessions',{tokenHash:text('token_hash').primaryKey(),passwordVersion:text('password_version').notNull(),expires:integer('expires').notNull()},t=>[index('idx_auth_sessions_expires').on(t.expires)]);
+export const authAttempts=sqliteTable('auth_attempts',{id:text('id').primaryKey(),created:integer('created').notNull()},t=>[index('idx_auth_attempts_created').on(t.created)]);
