@@ -42,6 +42,7 @@ Para verificar tipos y compilar:
 
 ```powershell
 npm.cmd run check
+npm.cmd run lint
 npm.cmd run build
 npm.cmd test
 npm.cmd run test:http
@@ -52,6 +53,10 @@ Para probar la compilación se puede usar `npm.cmd start`; la terminal muestra l
 `npm.cmd start` escucha en `127.0.0.1:8787` y carga el `.dev.vars` de la raíz. Para probarlo localmente, cambiá temporalmente `AUTH_ORIGIN` a `http://localhost:8787` y abrí esa dirección; devolvelo a `http://localhost:5173` al retomar desarrollo.
 
 Las pruebas usan bases temporales D1/Miniflare y no modifican los registros locales. Las llamadas directas a `/api/hotel` requieren una cookie de sesión válida. Los POST también requieren `Origin` igual a `AUTH_ORIGIN` e `Idempotency-Key` con un UUID: reutilizá la misma clave y los mismos datos si reintentás una operación. Una operación nueva necesita una clave nueva; reutilizarla con datos diferentes devuelve 409. La interfaz lo gestiona durante la sesión de la página.
+
+Los consumos nuevos pagados al momento quedan en la ficha del huésped, identificados como pagados, sin sumarse al saldo pendiente. Antes de usar esta versión, ejecutá `npm.cmd run db:local` para aplicar la migración `0004_guest_paid_sales`, que mantiene ese criterio en el límite de cobros de SQLite. La migración no modifica saldos ni reconstruye atribuciones de consumos históricos.
+
+Los importes muestran centavos. Las exportaciones respetan los filtros de Caja, Reservas y Stock y el período de Informes; el CSV usa separador `;` y coma decimal para Excel en español.
 
 `test:http` requiere ejecutar `build` antes: comprueba el login y las protecciones HTTP/RSC de la app compilada, incluyendo la redirección HTTPS detrás de un proxy.
 

@@ -15,6 +15,8 @@
 - Historial, informes de fondos y exportación CSV compatible con Excel.
 - Precio configurable de comida externa y base persistente.
 - Idempotencia de operaciones: la interfaz reutiliza la clave ante un reintento; la API registra la clave junto con los movimientos y el historial en un único batch.
+- Consumos nuevos cobrados al momento vinculados a la estadía: aparecen en su ficha como pagados y no aumentan la deuda ni el límite de cobro. Los cargos a estadía conservan cuenta nula; el saldo se deriva de esos cargos y de los cobros registrados.
+- Importes con dos decimales y CSV con coma decimal; exportación de Caja por fecha/actividad, Reservas por búsqueda, Stock por categoría e Informes por período.
 - Login de prueba con contraseña compartida, sesiones persistentes de ocho horas, cierre de sesión y protección de pantallas y API en el servidor; límite global de 20 intentos de acceso cada 15 minutos.
 
 ## Pendiente para uso operativo
@@ -40,5 +42,7 @@ Se verificaron tipos, compilación y 15 operaciones sobre SQLite: superposicione
 
 ## Pruebas locales de integridad
 `npm.cmd test` ejecuta la API contra bases temporales D1/Miniflare sin persistencia. Cubre cierres y comidas concurrentes, cambio de MP tras servir, reintentos y claves duplicadas, rollback, migración de comidas históricas, cargos, cobros, compras, pagos a proveedores, transferencias, stock y superposición de reservas. No usa los registros de `.wrangler/state/`.
+
+También verifica consumos cobrados inmediatamente, su atribución al huésped, saldos sin doble cobro, sobrecobros concurrentes de un centavo, presentación de centavos y filtros/escape de CSV. La migración `0004_guest_paid_sales` actualiza el límite transaccional de cobros. No reconstruye vínculos de consumos anteriores que fueron guardados sin estadía. La verificación de lint pasa sin desactivar reglas del proyecto.
 
 Las pruebas de acceso también cubren lectura y escritura anónimas, tokens falsos, contraseña incorrecta, origen cruzado, cookies HTTPS, vencimiento, revocación, cambio de contraseña, falta de configuración y límite concurrente de intentos. El despliegue de prueba en InterServer se verificó con HTTPS válido, redirección al login, API anónima bloqueada y rechazo de contraseña incorrecta y origen cruzado. La revisión visual en navegador sigue pendiente.

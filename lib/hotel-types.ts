@@ -1,0 +1,21 @@
+import type * as schema from '@/db/schema';
+
+export type Booking = typeof schema.bookings.$inferSelect;
+export type Product = typeof schema.products.$inferSelect;
+export type Sale = typeof schema.sales.$inferSelect;
+export type CashMovement = typeof schema.cash.$inferSelect;
+export type Expense = typeof schema.expenses.$inferSelect;
+export type HotelTables = {
+  rooms: typeof schema.rooms.$inferSelect;
+  bookings: Booking;
+  products: Product;
+  stock_movements: typeof schema.stock.$inferSelect;
+  sales: Sale;
+  expenses: Expense;
+  cash_movements: CashMovement;
+  daily_closes: typeof schema.closes.$inferSelect;
+  settings: typeof schema.settings.$inferSelect;
+  meal_overrides: typeof schema.meals.$inferSelect;
+  audit_log: typeof schema.audits.$inferSelect;
+};
+export type HotelData = { [Table in keyof HotelTables]: HotelTables[Table][] };
