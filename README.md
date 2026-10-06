@@ -130,7 +130,9 @@ npm start
 
 Reemplazá la URL por el dominio real, sin ruta ni barra final. El hash y el origen quedan en `.dev.vars`; no subas ese archivo ni copies la base de esta PC. El VPS tendrá su propia base de prueba. `npm start` usa Miniflare local, no una base remota de Cloudflare.
 
-El servidor escucha solamente en `127.0.0.1:8787`. Configurá un proxy inverso con HTTPS para el dominio, que envíe las solicitudes a `http://127.0.0.1:8787` y conserve `Host`. No expongas Vite de desarrollo a Internet. El despliegue debe mantener el proceso activo y la carpeta `.wrangler/state/` entre reinicios y actualizaciones. La compra del VPS y la configuración de dominio, certificado y servicio quedan como pasos de alojamiento.
+El servidor escucha solamente en `127.0.0.1:8787`. Configurá un proxy inverso con HTTPS para el dominio, que envíe las solicitudes a `http://127.0.0.1:8787` y conserve `Host`. No expongas Vite de desarrollo a Internet. El despliegue debe mantener el proceso activo y la carpeta `.wrangler/state/` entre reinicios y actualizaciones.
+
+La instalación de prueba en InterServer está documentada en [deploy/VPS.md](deploy/VPS.md). Se accede por HTTPS a la IP, con login y una base independiente. Los cambios de GitHub no se publican automáticamente.
 
 Para cambiar la contraseña, detené el servidor, respaldá y renombrá `.dev.vars` fuera del repositorio y ejecutá nuevamente `auth:setup` con el mismo origen. Conservá las otras variables si ya agregaste alguna. Reiniciá el servidor: las sesiones anteriores se invalidan automáticamente. HTTP solo se admite para pruebas en localhost; en un dominio público el acceso exige configurar HTTPS.
 
