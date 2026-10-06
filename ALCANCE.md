@@ -4,6 +4,9 @@
 - Panel del día, saldos por cuenta y pendientes.
 - Calendario de 17 habitaciones y fichas de estadía.
 - Alta de reservas; prevención de noches superpuestas; regímenes Desayuno/MP/PC.
+- HOT-01: tarifas por tipo Single/Doble y régimen, en ARS por habitación y noche; períodos sin superposición, consulta por fecha y cotización nocturna guardada. Precio acordado con motivo y responsable declarado cuando corresponda.
+- HOT-02: edición de reservas activas con control de versiones y disponibilidad transaccional en SQLite. Bloqueos de mantenimiento por noches, liberación con historial y protección de cancelaciones con movimientos. Confirmadas y alojadas bloquean; no hay reservas provisionales.
+- HOT-03: condición de pago independiente de movimientos, descuentos por importe/porcentaje, etiquetas de amigo/canje/cortesía, detalle de base/descuento/alojamiento/consumos/cobros/saldo. Canje con acuerdo y cumplimiento explícito, trazado en historial sin caja ficticia.
 - Estados de estadía y cancelación de reservas sin movimientos.
 - Consumos a habitación o cobrados; bebidas con salida de stock.
 - Comidas incluidas con servicio normalizado y cupos protegidos en SQLite; elección de MP por día bloqueada si ya se sirvió otra comida o la fecha está cerrada.
@@ -21,7 +24,7 @@
 
 ## Pendiente para uso operativo
 - Usuarios individuales y permisos de superadministrador, gerente y consulta en backend; el login compartido de prueba no tiene roles ni identifica a cada operador.
-- Edición completa de reservas, habitaciones, productos y tarifas.
+- Edición completa de habitaciones y productos; regularizaciones de reservas cerradas o con devoluciones. Esta etapa permite editar reservas confirmadas/alojadas sin invalidar consumos ni bajar el total por debajo de los cobros existentes.
 - Apertura real de saldos, stock, reservas y deudas.
 - Devoluciones, anulaciones y correcciones posteriores a cierres.
 - Gastos recurrentes automáticos (hoy solo clasificación fijo/variable).
@@ -29,7 +32,7 @@
 - Conversión de cajas/bultos y transferencias entre depósitos.
 - Recetas, costos de consumo, valoración de inventario y resultados.
 - Reglas de comidas de llegada/salida. La previsión actual usa noches [llegada, salida); comidas del día de salida requieren revisión.
-- Mantenimiento con tareas y bloqueos por fechas.
+- Gestión de tareas de mantenimiento; los bloqueos de disponibilidad por fechas ya están implementados.
 - Facturación e integraciones Booking/CRM/POS/web.
 - Revisión visual en navegador y validación con el gerente.
 - Completar la revisión de concurrencia en los demás circuitos (por ejemplo, estados de reservas y conteos físicos) y la seguridad de acceso. Las claves pendientes de la interfaz se conservan durante la sesión de la página; no sobreviven a una recarga.
@@ -44,5 +47,7 @@ Se verificaron tipos, compilación y 15 operaciones sobre SQLite: superposicione
 `npm.cmd test` ejecuta la API contra bases temporales D1/Miniflare sin persistencia. Cubre cierres y comidas concurrentes, cambio de MP tras servir, reintentos y claves duplicadas, rollback, migración de comidas históricas, cargos, cobros, compras, pagos a proveedores, transferencias, stock y superposición de reservas. No usa los registros de `.wrangler/state/`.
 
 También verifica consumos cobrados inmediatamente, su atribución al huésped, saldos sin doble cobro, sobrecobros concurrentes de un centavo, presentación de centavos y filtros/escape de CSV. La migración `0004_guest_paid_sales` actualiza el límite transaccional de cobros. No reconstruye vínculos de consumos anteriores que fueron guardados sin estadía. La verificación de lint pasa sin desactivar reglas del proyecto.
+
+La migración `0005_reservation_stage_one` agrega tarifas, condiciones económicas y bloqueos de mantenimiento, sin cambiar importes ni pagos históricos. Las pruebas de esta etapa cubren cambios de período, precios congelados, tarifas incompletas, cotizaciones obsoletas, reservas/modificaciones/mantenimiento simultáneos, rollback íntegro, cancelación concurrente con pagos, descuentos, amigo sin descuento automático, cortesía/canje sin caja ficticia y representación de la ficha/formulario. La revisión visual interactiva con el gerente sigue pendiente.
 
 Las pruebas de acceso también cubren lectura y escritura anónimas, tokens falsos, contraseña incorrecta, origen cruzado, cookies HTTPS, vencimiento, revocación, cambio de contraseña, falta de configuración y límite concurrente de intentos. El despliegue de prueba en InterServer se verificó con HTTPS válido, redirección al login, API anónima bloqueada y rechazo de contraseña incorrecta y origen cruzado. La revisión visual en navegador sigue pendiente.

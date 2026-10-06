@@ -60,6 +60,24 @@ Los importes muestran centavos. Las exportaciones respetan los filtros de Caja, 
 
 `test:http` requiere ejecutar `build` antes: comprueba el login y las protecciones HTTP/RSC de la app compilada, incluyendo la redirección HTTPS detrás de un proxy.
 
+## Tarifas, disponibilidad y condiciones de reservas · etapa 1
+
+Aplicá `npm.cmd run db:local` antes de abrir esta versión. Se agrega la migración `0005_reservation_stage_one`; conserva los importes acordados y los cobros existentes, identificando el precio anterior como histórico, sin inventar tarifas ni reconstruir precios nocturnos.
+
+En **Configuración → Tarifas de alojamiento**, cargá las seis combinaciones de Single/Doble y Desayuno/MP/PC que correspondan. La unidad es **ARS por habitación y noche**. Las fechas desde/hasta de una tarifa son inclusivas; no se permiten vigencias superpuestas para la misma combinación. Una tarifa de cero sólo debe cargarse si ése es el precio decidido: no se crean tarifas de ejemplo.
+
+Desde **Reservas o Calendario → Consultar tarifas** podés consultar la fecha elegida. La carga de reservas también muestra ese cuadro y el detalle de cada noche, con llegada incluida y salida excluida. El servidor vuelve a validar la cotización; si los precios cambiaron, hay que actualizar los registros y revisar antes de guardar. Las tarifas guardadas dentro de una reserva no cambian al editar el tarifario.
+
+Si falta una tarifa, elegí **Precio acordado**, ingresá el alojamiento antes del descuento y completá motivo y responsable declarado. La condición de pago es un texto independiente; registrar "pago al egreso" o "pago anticipado" no carga dinero. Los cobros reales se registran desde la ficha, con su fecha, importe y cuenta.
+
+Los descuentos pueden ser por importe o porcentaje (hasta dos decimales), sin superar la base. **Amigo** no genera descuento automático. **Cortesía** deja el alojamiento en cero con motivo/responsable. **Canje** exige describir el acuerdo; si hay una parte monetaria, indicá su importe mediante el precio acordado y/o descuento explícito. El canje no cancela el saldo de dinero por sí solo y queda pendiente hasta registrar su cumplimiento desde la ficha. Finalizar la estadía no marca el canje como cumplido. Cada cambio de cumplimiento conserva responsable y observación en el historial.
+
+En la ficha, **Editar reserva y condiciones** permite modificar reservas confirmadas o alojadas. **Conservar precio y detalle guardados** mantiene base, descuento y tarifas anteriores; para cambiar descuento, fechas, habitación o régimen, elegí tarifas o un nuevo precio acordado. Si el cambio falla, no se altera la reserva anterior. No se pueden dejar consumos fuera de las nuevas fechas ni reducir el alojamiento por debajo de lo ya cobrado. Los cambios de régimen/personas con comidas ya servidas requieren revisión; no se regularizan automáticamente.
+
+En **Calendario → Bloquear noches por mantenimiento**, indicá habitación, desde incluido/hasta excluido, motivo y responsable. El bloqueo impide nuevas asignaciones; no desplaza reservas existentes. Liberarlo conserva su registro y el motivo en el historial. El estado global "Fuera de servicio" también impide reservar. Las confirmadas y alojadas bloquean noches; una salida permite otra llegada ese mismo día. La cancelación conserva la reserva y libera las noches sólo si no tiene pagos ni consumos. No se agregaron provisionales ni vencimientos automáticos.
+
+El responsable se declara porque el login actual es compartido; no es una identidad individual verificada. La revisión visual interactiva y las regularizaciones/devoluciones completas quedan pendientes. Esta etapa no agrega funciones de comidas, stock, personal ni integraciones.
+
 ## Codex en VS Code
 
 Con la extensión de Codex habilitada, abrí este proyecto y pedile tareas concretas. `AGENTS.md` contiene las reglas y `ALCANCE.md` explica qué está implementado y qué falta.

@@ -159,7 +159,7 @@ test('financial flows keep stock, pending balances and transaction protections',
   assert.equal((await f.one("SELECT COUNT(*) n FROM cash_movements WHERE kind='Transferencia'")).n, 2);
   assert.equal((await f.one('SELECT SUM(amount) n FROM cash_movements')).n, total);
   assert.equal((await f.post('stock', { date: sale.date, product: 'agua', qty: 999, reason: 'Merma' })).status, 400);
-  const booking = { guest: 'Test', room: 2, start: '2026-10-02', end: '2026-10-03', pax: 1, regime: 'Desayuno', meal: 'Cena', amount: 100, source: 'Directa' };
+  const booking = { guest: 'Test', room: 2, start: '2026-10-02', end: '2026-10-03', pax: 1, regime: 'Desayuno', meal: 'Cena', amount: 100, source: 'Directa', priceMode: 'Acordado', reason: 'Importe de prueba', responsible: 'Test' };
   assert.equal((await f.post('booking', booking)).status, 200);
   assert.equal((await f.post('booking', booking)).status, 400);
   assert.equal((await f.post('booking', { ...booking, start: booking.end, end: '2026-10-04' })).status, 200);

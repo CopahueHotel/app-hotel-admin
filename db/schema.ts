@@ -14,3 +14,12 @@ export const audits=sqliteTable('audit_log',{id:text('id').primaryKey(),created:
 export const requests=sqliteTable('operation_requests',{key:text('key').primaryKey(),fingerprint:text('fingerprint').notNull(),created:text('created').notNull()});
 export const authSessions=sqliteTable('auth_sessions',{tokenHash:text('token_hash').primaryKey(),passwordVersion:text('password_version').notNull(),expires:integer('expires').notNull()},t=>[index('idx_auth_sessions_expires').on(t.expires)]);
 export const authAttempts=sqliteTable('auth_attempts',{id:text('id').primaryKey(),created:integer('created').notNull()},t=>[index('idx_auth_attempts_created').on(t.created)]);
+export const rates=sqliteTable('room_rates',{
+ id:text('id').primaryKey(),type:text('type').notNull(),regime:text('regime').notNull(),start:text('start').notNull(),end:text('end').notNull(),amount:integer('amount').notNull(),version:integer('version').notNull().default(0),responsible:text('responsible').notNull(),note:text('note').notNull().default(''),
+},t=>[index('idx_rates_period').on(t.type,t.regime,t.start,t.end)]);
+export const bookingTerms=sqliteTable('booking_terms',{
+ booking:text('booking').primaryKey().references(()=>bookings.id),base_amount:integer('base_amount').notNull(),tariff_total:integer('tariff_total'),discount_amount:integer('discount_amount').notNull().default(0),discount_type:text('discount_type').notNull().default('Ninguno'),discount_value:integer('discount_value').notNull().default(0),price_mode:text('price_mode').notNull().default('Historico'),snapshot:text('snapshot').notNull().default('[]'),payment_condition:text('payment_condition').notNull().default('Sin especificar'),benefit:text('benefit').notNull().default('Habitual'),reason:text('reason').notNull().default(''),responsible:text('responsible').notNull().default(''),observation:text('observation').notNull().default(''),barter_agreement:text('barter_agreement').notNull().default(''),barter_status:text('barter_status').notNull().default('No corresponde'),version:integer('version').notNull().default(0),
+});
+export const roomBlocks=sqliteTable('room_blocks',{
+ id:text('id').primaryKey(),room:integer('room').notNull().references(()=>rooms.id),start:text('start').notNull(),end:text('end').notNull(),reason:text('reason').notNull(),responsible:text('responsible').notNull(),active:integer('active').notNull().default(1),
+},t=>[index('idx_blocks_room_period').on(t.room,t.start,t.end)]);

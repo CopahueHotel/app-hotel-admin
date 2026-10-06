@@ -5,6 +5,9 @@ export type Product = typeof schema.products.$inferSelect;
 export type Sale = typeof schema.sales.$inferSelect;
 export type CashMovement = typeof schema.cash.$inferSelect;
 export type Expense = typeof schema.expenses.$inferSelect;
+export type Rate = typeof schema.rates.$inferSelect;
+export type BookingTerms = typeof schema.bookingTerms.$inferSelect;
+export type RoomBlock = typeof schema.roomBlocks.$inferSelect;
 export type HotelTables = {
   rooms: typeof schema.rooms.$inferSelect;
   bookings: Booking;
@@ -17,5 +20,8 @@ export type HotelTables = {
   settings: typeof schema.settings.$inferSelect;
   meal_overrides: typeof schema.meals.$inferSelect;
   audit_log: typeof schema.audits.$inferSelect;
+  room_rates: Rate;
+  booking_terms: BookingTerms;
+  room_blocks: RoomBlock;
 };
 export type HotelData = { [Table in keyof HotelTables]: HotelTables[Table][] };

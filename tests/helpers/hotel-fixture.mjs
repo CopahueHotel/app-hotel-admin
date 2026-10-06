@@ -4,6 +4,7 @@ import { pbkdf2Sync } from 'node:crypto';
 import { Miniflare } from 'miniflare';
 import ts from 'typescript';
 import { z } from 'zod';
+import path from 'node:path';
 export const testPassword = 'test-only-password';
 const salt = '0123456789abcdef0123456789abcdef';
 const passwordHash = 'pbkdf2-sha256:100000:' + salt + ':' + pbkdf2Sync(testPassword, Buffer.from(salt, 'hex'), 100000, 32, 'sha256').toString('hex');
@@ -56,6 +57,8 @@ export async function fixture(t, beforeMigration) {
       if (name === '@/lib/hotel-auth') return load('lib/hotel-auth.ts');
       if (name === 'next/server') return { NextResponse: { next: () => new Response(null, { headers: { 'x-middleware-next': '1' } }) } };
       if (name === 'zod') return { z };
+      if (name.startsWith('@/')) return load(name.slice(2)+'.ts');
+      if (name.startsWith('./')) return load(path.posix.join(path.posix.dirname(file),name+'.ts'));
       throw Error('Unexpected import: ' + name);
     }, exports, { ...console, error: error => errors.push(error) });
     return exports;
