@@ -78,6 +78,24 @@ En **Calendario → Bloquear noches por mantenimiento**, indicá habitación, de
 
 El responsable se declara porque el login actual es compartido; no es una identidad individual verificada. La revisión visual interactiva y las regularizaciones/devoluciones completas quedan pendientes. Esta etapa no agrega funciones de comidas, stock, personal ni integraciones.
 
+## Alimentación, asistencia y salidas · etapa 2
+
+Aplicá `npm.cmd run db:local` para la migración `0006_meal_stage_two`. Agrega personas dentro de cada reserva, sin asignarles nombres ni restricciones por suposición y sin modificar reservas, consumos ni pagos históricos.
+
+En la **ficha → Alimentación**, completá el nombre, restricciones, preferencias y observaciones de cada persona. Son textos independientes; la app no decide qué alimentos son aptos. El régimen contratado se conserva. En MP, la elección inicial sigue siendo cena y **Cambiar MP del día** modifica sólo la fecha elegida, sin tocar régimen ni precio. No se permite cambiar una elección que contradiga comidas ya servidas o duplique una previsión adicional.
+
+En **Restaurante**, elegí fecha y desayuno/almuerzo/cena. El listado muestra una fila por huésped, condiciones individuales, suspensiones y servicio pendiente/realizado; los totales separan huéspedes, externos y total general. Incluyen las personas previstas que ya fueron servidas. **Suspender comidas** permite seleccionar todas las personas o algunas, con intervalo desde/hasta inclusivo, motivo, observación y responsable. **Reactivar** conserva el historial. No altera importes ni devuelve dinero.
+
+**Registrar servicio** confirma una comida incluida de una persona: guarda el consumo incluido sin importe y evita duplicaciones, incluso ante solicitudes simultáneas. No se sirve automáticamente por aparecer en la previsión. Los registros históricos sin atribución individual quedan visibles como tales y requieren revisión antes de registrar otro servicio de esa fecha; no se inventa quién comió.
+
+**Agregar previsión** registra clientes externos explícitos o un servicio adicional de un huésped, con fecha, servicio, cantidad y observaciones. Los externos no se deducen de ventas. **Actualizar** registra asistencia servida o cancela una previsión pendiente; los cargos y cobros de adicionales se registran por separado con las funciones existentes. Una comida incluida no puede duplicarse como adicional. Los servicios adicionales suspendidos tampoco pueden marcarse servidos.
+
+Se conserva la regla actual **[llegada, salida)** para las comidas incluidas. En la fecha de salida, los servicios se muestran **sin confirmar**, con cero personas previstas, hasta registrar una previsión adicional explícita. La definición comercial de comidas incluidas de llegada/salida sigue pendiente con el gerente. La elección diaria de MP y los servicios respetan también las fechas cerradas.
+
+**Exportar listado CSV** descarga el servicio de la fecha con restricciones, preferencias, observaciones, suspensión y estado para cocina. La ficha conserva el historial con fecha, responsable declarado y detalle; el acceso sigue siendo compartido, sin roles individuales.
+
+El **Resumen diario → Próximas salidas** y las fichas muestran noches restantes, salida hoy/mañana o salida pendiente de registrar. Usan la fecha de consulta y la zona del hotel **America/Argentina/Buenos_Aires**, excluyen canceladas y no cierran estadías ni envían mensajes. Las finalizadas muestran su estado.
+
 ## Codex en VS Code
 
 Con la extensión de Codex habilitada, abrí este proyecto y pedile tareas concretas. `AGENTS.md` contiene las reglas y `ALCANCE.md` explica qué está implementado y qué falta.

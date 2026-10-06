@@ -43,6 +43,13 @@
       "when": 1791309248736,
       "tag": "0005_reservation_stage_one",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1791310902396,
+      "tag": "0006_meal_stage_two",
+      "breakpoints": true
     }
   ]
 }

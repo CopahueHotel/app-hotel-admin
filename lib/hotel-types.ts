@@ -9,6 +9,10 @@ export type Rate = typeof schema.rates.$inferSelect;
 export type BookingTerms = typeof schema.bookingTerms.$inferSelect;
 export type RoomBlock = typeof schema.roomBlocks.$inferSelect;
 export type HotelTables = {
+  booking_guests: typeof schema.guests.$inferSelect;
+  meal_suspensions: typeof schema.suspensions.$inferSelect;
+  meal_services: typeof schema.mealServices.$inferSelect;
+  meal_plans: typeof schema.mealPlans.$inferSelect;
   rooms: typeof schema.rooms.$inferSelect;
   bookings: Booking;
   products: Product;

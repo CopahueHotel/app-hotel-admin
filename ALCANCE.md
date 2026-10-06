@@ -1,6 +1,10 @@
 # Alcance de la primera versión
 
 ## Implementado
+- HOT-04: condiciones de alimentación por persona, separando restricciones, preferencias y observaciones; MP con elección por día sin cambiar precio ni régimen.
+- HOT-05: suspensiones por persona, fecha/intervalo y servicio; reactivación con historial, previsión separada del servicio realizado y unicidad por persona/fecha/servicio. Sin ajustes económicos automáticos.
+- HOT-06: listado diario por servicio, huéspedes individuales y previsiones explícitas de clientes externos, totales separados y exportación CSV para cocina. Servicios de salida visibles sin confirmar según la regla vigente [llegada, salida).
+- HOT-07: noches restantes y próximas salidas según fecha de consulta en la zona del hotel, sin cierres ni mensajes automáticos.
 - Panel del día, saldos por cuenta y pendientes.
 - Calendario de 17 habitaciones y fichas de estadía.
 - Alta de reservas; prevención de noches superpuestas; regímenes Desayuno/MP/PC.
@@ -31,7 +35,8 @@
 - Comprobantes adjuntos y respaldos automáticos.
 - Conversión de cajas/bultos y transferencias entre depósitos.
 - Recetas, costos de consumo, valoración de inventario y resultados.
-- Reglas de comidas de llegada/salida. La previsión actual usa noches [llegada, salida); comidas del día de salida requieren revisión.
+- Definición comercial de comidas de llegada/salida: se conserva [llegada, salida) para incluidos; la salida queda visible sin confirmar y se puede prever expresamente como adicional. No se inventa una inclusión contractual ni su precio.
+- Regularización de comidas históricas sin atribución individual y cambios de servicios ya realizados. No se asignan personas por suposición al migrar.
 - Gestión de tareas de mantenimiento; los bloqueos de disponibilidad por fechas ya están implementados.
 - Facturación e integraciones Booking/CRM/POS/web.
 - Revisión visual en navegador y validación con el gerente.
@@ -44,6 +49,8 @@ Los informes muestran movimientos de fondos y pendientes, no utilidad contable. 
 Se verificaron tipos, compilación y 15 operaciones sobre SQLite: superposiciones, bebida y stock, cobro, sobrecobro rechazado, comidas incluidas, compra, pago parcial, salidas excesivas rechazadas, transferencias y cierre. La revisión visual en navegador quedó pendiente.
 
 ## Pruebas locales de integridad
+La etapa 2 usa la migración `0006_meal_stage_two`. Sus pruebas cubren restricciones para una sola persona, cambios diarios de MP, suspensiones y reactivaciones sin dinero, intervalos, servicio explícito y duplicaciones concurrentes, carreras suspensión/servicio, previsiones adicionales y externas, conservación histórica, fechas cerradas, salida visible pendiente, totales y representación de las pantallas. También verifican fecha del hotel y noches restantes al cambiar de mes. La revisión visual interactiva con el gerente continúa pendiente.
+
 `npm.cmd test` ejecuta la API contra bases temporales D1/Miniflare sin persistencia. Cubre cierres y comidas concurrentes, cambio de MP tras servir, reintentos y claves duplicadas, rollback, migración de comidas históricas, cargos, cobros, compras, pagos a proveedores, transferencias, stock y superposición de reservas. No usa los registros de `.wrangler/state/`.
 
 También verifica consumos cobrados inmediatamente, su atribución al huésped, saldos sin doble cobro, sobrecobros concurrentes de un centavo, presentación de centavos y filtros/escape de CSV. La migración `0004_guest_paid_sales` actualiza el límite transaccional de cobros. No reconstruye vínculos de consumos anteriores que fueron guardados sin estadía. La verificación de lint pasa sin desactivar reglas del proyecto.
