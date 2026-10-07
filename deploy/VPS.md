@@ -8,7 +8,7 @@ El certificado de Let's Encrypt corresponde a la IP y usa el perfil `shortlived`
 
 ## Acceso y datos
 
-El acceso web usa la contraseña compartida configurada para las pruebas locales al desplegar. Sólo se transfirió su hash, guardado en `/opt/hotel-admin/.dev.vars` con permisos 600. Las modificaciones posteriores de la contraseña local no cambian la del VPS.
+HOT-15–19 reemplaza la contraseña compartida por cuentas individuales con roles y permisos. `.dev.vars` conserva el origen de acceso y tiene permisos 600. Los usuarios y contraseñas de la PC no se transfieren al VPS.
 
 La base está en `/opt/hotel-admin/.wrangler/state/`. Se aplicaron las migraciones del proyecto sin copiar registros de la PC. Al ingresar se generan los ejemplos ficticios del prototipo.
 
@@ -33,6 +33,8 @@ systemctl list-timers --all | grep certbot
 ```
 
 ## Actualizaciones y respaldos
+
+La migración 0009 reemplaza el acceso compartido por cuentas individuales: las sesiones anteriores dejan de dar acceso. Con el servicio detenido y después de migrar, crear el primer superadministrador como `hotel-admin`, con `npm run auth:bootstrap -- "Nombre completo" email@dominio.com`. El comando entrega una contraseña aleatoria una sola vez; no copia usuarios ni contraseñas de la PC. Seguir el procedimiento de usuarios de README.md antes de reiniciar el servicio. En instalaciones que ya tengan usuarios, conservarlos y no ejecutar nuevamente el bootstrap.
 
 Antes de actualizar, detener `hotel-admin` y respaldar `.wrangler/state/` fuera de `/opt/hotel-admin`, con acceso restringido. Conservar también `.dev.vars`. Reemplazar sólo fuentes, instalar con `npm ci`, aplicar migraciones pendientes con `npm run db:local`, verificar `npm run check` y `npm run build`, y arrancar el servicio. Ejecutar los comandos de npm como `hotel-admin`, desde `/opt/hotel-admin`:
 

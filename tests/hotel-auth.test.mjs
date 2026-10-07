@@ -57,7 +57,7 @@ test('sessions are hashed, expire, revoke on logout and invalidate after passwor
   assert.equal((await f.auth.requireSession(new Request('http://localhost', { headers: { Cookie: f.cookie } }))).status, 401);
   const fresh = await f.auth.login(f.authRequest('/api/auth/login', { password: testPassword }));
   const freshCookie = fresh.headers.get('set-cookie').split(';')[0];
-  f.authEnv.AUTH_PASSWORD_HASH = f.authEnv.AUTH_PASSWORD_HASH.slice(0, -1) + (f.authEnv.AUTH_PASSWORD_HASH.endsWith('0') ? '1' : '0');
+  await f.raw.prepare('UPDATE users SET password_hash=?,version=version+1 WHERE id=?').bind(await f.load('modules/access/passwords.ts').hashPassword('new-test-password'), 'test-admin').run();
   assert.equal((await f.auth.requireSession(new Request('http://localhost', { headers: { Cookie: freshCookie } }))).status, 401);
 });
 
@@ -71,19 +71,19 @@ test('HTTPS origin creates secure cookies and remains valid behind a reverse pro
   const headers = { Cookie: cookie, Origin: f.authEnv.AUTH_ORIGIN, 'Idempotency-Key': crypto.randomUUID(), 'oai-authenticated-user-email': 'spoofed@example.test' };
   const response = await f.api.POST(f.authRequest('/api/hotel', { action: 'settings', data: { mealPrice: 100 } }, headers));
   assert.equal(response.status, 200);
-  assert.equal((await f.one('SELECT actor FROM audit_log')).actor, 'Acceso compartido de prueba');
+  assert.equal((await f.one('SELECT actor FROM audit_log')).actor, 'Test Administrator');
   assert.equal((await f.api.POST(f.authRequest('/api/hotel', { action: 'settings', data: { mealPrice: 100 } }, { ...headers, Origin: 'http://localhost' }))).status, 403);
 });
 
 test('missing or unsafe configuration fails closed', async t => {
   const f = await fixture(t);
-  const hash = f.authEnv.AUTH_PASSWORD_HASH;
-  for (const invalid of [undefined, 'plaintext']) {
-    f.authEnv.AUTH_PASSWORD_HASH = invalid;
+  const origin = f.authEnv.AUTH_ORIGIN;
+  for (const invalid of [undefined, 'invalid-url']) {
+    f.authEnv.AUTH_ORIGIN = invalid;
     assert.equal((await f.api.GET(new Request('http://localhost/api/hotel', { headers: { Cookie: f.cookie } }))).status, 503);
     assert.equal((await f.auth.login(f.authRequest('/api/auth/login', { password: testPassword }))).status, 503);
   }
-  f.authEnv.AUTH_PASSWORD_HASH = hash;
+  f.authEnv.AUTH_ORIGIN = origin;
   f.authEnv.AUTH_ORIGIN = 'http://public.hotel.example';
   assert.equal((await f.auth.requireSession(new Request('http://localhost', { headers: { Cookie: f.cookie } }))).status, 503);
 });

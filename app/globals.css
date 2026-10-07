@@ -103,3 +103,8 @@
  .planning-days button span { font-size: 10px; }
  .planning-filters, .planning-entities, .planning-reports, .planning-daily { padding: 16px; }
 }
+.permission-matrix { display: grid; grid-template-columns: repeat(auto-fit,minmax(230px,1fr)); gap: 16px; width: 100%; }
+.permission-matrix fieldset { border: 1px solid var(--border); border-radius: 8px; padding: 14px; min-width: 0; }
+.permission-matrix legend { padding: 0 6px; font-weight: 600; }
+.permission-matrix .tick { display: flex; gap: 8px; margin: 8px 0; align-items: flex-start; }
+.permission-matrix input[type="checkbox"] { margin-top: 3px; flex-shrink: 0; }

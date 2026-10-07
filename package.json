@@ -16,7 +16,8 @@
     "check": "tsc --noEmit",
     "test": "node --test tests/*.test.mjs",
     "test:http": "node tests/hotel-http-smoke.mjs",
-    "auth:setup": "node scripts/setup-auth.mjs"
+    "auth:setup": "node scripts/setup-auth.mjs",
+    "auth:bootstrap": "node scripts/bootstrap-admin.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",

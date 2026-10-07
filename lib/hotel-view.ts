@@ -1,4 +1,5 @@
 import type { Booking, CashMovement, Product, Sale } from './hotel-types';
+import { remainingAmount } from '@/modules/shared/money';
 
 const moneyFormat = new Intl.NumberFormat('es-AR', {
   style: 'currency', currency: 'ARS', minimumFractionDigits: 2, maximumFractionDigits: 2,
@@ -10,7 +11,7 @@ export function bookingBalance(booking: Booking, sales: Sale[], cash: CashMoveme
     .reduce((total, s) => total + s.amount, 0);
   const payments = cash.filter(m => m.ref === booking.id && m.kind === 'Cobro')
     .reduce((total, m) => total + m.amount, 0);
-  return booking.amount + charges - payments;
+  return remainingAmount(booking.amount,charges,payments);
 }
 
 export const filterBookings = (bookings: Booking[], search: string) => bookings

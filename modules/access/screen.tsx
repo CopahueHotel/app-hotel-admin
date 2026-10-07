@@ -1,0 +1,33 @@
+'use client';
+
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { actionLabels,moduleLabels,modules,permissionCatalog,roleNames } from '@/modules/access/permissions';
+import { useCallback,useEffect,useRef,useState,type FormEvent } from 'react';
+type User={id:string;name:string;email:string;active:number;roles:string;version:number};
+type Role={id:keyof typeof roleNames;name:string;permissions:string;version:number};
+type Records={users:User[];roles:Role[];audit_log:{id:string;created:string;actor:string;action:string;detail:string}[]};
+export function UsersScreen({onSave}:{onSave:(action:string,data:unknown)=>Promise<void>}){
+ const [data,setData]=useState<Records|null>(null),[error,setError]=useState(''),[busy,setBusy]=useState(false),[edit,setEdit]=useState<User|'new'|null>(null),[reset,setReset]=useState<User|null>(null),[role,setRole]=useState<Role|null>(null),lock=useRef(false);
+ const load=useCallback(()=>fetch('/api/hotel/users').then(async r=>{if(r.status===401)window.location.replace('/login');const d=await r.json() as Records & {error?:string};if(!r.ok)throw Error(d.error);return d;}).then(setData).catch(e=>setError(e.message)),[]);
+ useEffect(()=>{void load();},[load]);
+ async function submit(e:FormEvent<HTMLFormElement>){e.preventDefault();if(lock.current)return;const fd=new FormData(e.currentTarget);lock.current=true;setBusy(true);setError('');
+  try{if(reset)await onSave('userReset',{id:reset.id,version:reset.version,password:fd.get('password')});
+   else if(role)await onSave('rolePermissions',{id:role.id,version:role.version,permissions:fd.getAll('permission')});
+   else if(edit)await onSave('userSave',{id:edit==='new'?'':edit.id,version:edit==='new'?0:edit.version,name:fd.get('name'),email:fd.get('email'),active:fd.get('active')==='on',roles:fd.getAll('role'),password:fd.get('password')??''});
+   setEdit(null);setReset(null);setRole(null);await load();
+  }catch(e){setError(e instanceof Error?e.message:'No se pudo guardar.');}finally{lock.current=false;setBusy(false);}
+ }
+ const close=()=>{setEdit(null);setReset(null);setRole(null);setError('');};
+ return <><div className="notice">Las personas pueden tener varios roles: sus permisos se suman. Los cambios se aplican también a las sesiones abiertas. No hay registro público.</div>{error&&<p role="alert" className="notice error">{error}</p>}
+ {!data?<Button onClick={()=>void load()}>Actualizar usuarios</Button>:<>
+ {(edit||reset||role)&&<form onSubmit={submit} className="entry-form planning-editor"><fieldset disabled={busy}><h2>{reset?'Restablecer acceso':role?'Permisos de '+role.name:edit==='new'?'Crear usuario':'Modificar usuario'}</h2>
+ {edit&&<div className="form-grid"><label className="field"><span>Nombre</span><Input name="name" defaultValue={edit==='new'?'':edit.name} required maxLength={240}/></label><label className="field"><span>Email</span><Input name="email" type="email" autoComplete="off" defaultValue={edit==='new'?'':edit.email} required maxLength={240}/></label><label className="tick"><input name="active" type="checkbox" defaultChecked={edit==='new'||!!edit.active}/>Activo</label><fieldset><legend>Roles</legend>{Object.entries(roleNames).map(([id,label])=><label key={id} className="tick"><input type="checkbox" name="role" value={id} defaultChecked={edit!=='new'&&(JSON.parse(edit.roles) as string[]).includes(id)}/>{label}</label>)}</fieldset></div>}
+ {(edit==='new'||reset)&&<label className="field"><span>{reset?'Nueva contraseña para '+reset.email:'Contraseña inicial'}</span><Input name="password" type="password" autoComplete="new-password" minLength={12} maxLength={256} required/><small>Entre 12 y 256 caracteres. Entregala de forma privada; nunca se guarda en texto plano. Restablecerla revoca las sesiones anteriores.</small></label>}
+ {role&&<div className="permission-matrix">{Object.entries(modules).filter(([module])=>module!=='users').map(([module,actions])=><fieldset key={module}><legend>{moduleLabels[module as keyof typeof modules]}</legend>{actions.map(action=>{const key=module+'.'+action;return <label className="tick" key={key}><input type="checkbox" name="permission" value={key} defaultChecked={(JSON.parse(role.permissions) as string[]).includes(key)}/>{actionLabels[action]}</label>;})}</fieldset>)}<p>Los permisos corresponden a circuitos existentes. Consultar no concede permiso de modificar; para usar una pantalla habilitá su consulta.</p></div>}
+ <div className="form-actions"><Button type="button" variant="outline" onClick={close}>Volver</Button><Button disabled={busy}>{busy?'Guardando…':'Guardar'}</Button></div></fieldset></form>}
+ <section className="panel"><div className="panel-heading"><h2>Usuarios</h2><Button onClick={()=>{close();setEdit('new');}}>Crear usuario</Button></div><div className="table-wrap"><table className="supply-table"><thead><tr><th>Nombre</th><th>Email</th><th>Estado</th><th>Roles</th><th>Acciones</th></tr></thead><tbody>{data.users.map(u=><tr key={u.id}><td>{u.name}</td><td>{u.email}</td><td>{u.active?'Activo':'Inactivo'}</td><td>{(JSON.parse(u.roles) as (keyof typeof roleNames)[]).map(r=>roleNames[r]).join(' · ')}</td><td><div className="inline-controls"><Button variant="outline" onClick={()=>{close();setEdit(u);}}>Modificar</Button><Button variant="outline" onClick={()=>{close();setReset(u);}}>Restablecer acceso</Button></div></td></tr>)}</tbody></table></div></section>
+ <section className="panel spaced"><h2>Permisos por rol</h2><p>{permissionCatalog.length} permisos disponibles. Superadministrador conserva todos y no se puede reducir.</p>{data.roles.map(r=><div className="config-row" key={r.id}><span>{r.name} · {(JSON.parse(r.permissions) as string[]).length} permisos</span>{r.id!=='superadmin'&&<Button variant="outline" onClick={()=>{close();setRole(r);}}>Modificar matriz</Button>}</div>)}</section>
+ <section className="panel spaced"><h2>Historial de acceso</h2>{data.audit_log.slice().sort((a,b)=>b.created.localeCompare(a.created)).map(log=>{const detail=JSON.parse(log.detail);return <details key={log.id}><summary>{new Date(log.created).toLocaleString('es-AR',{timeZone:'America/Argentina/Buenos_Aires'})} · {log.actor} · {log.action==='rolePermissions'?'Cambio de permisos':log.action==='userReset'?'Restablecimiento de acceso':log.action==='bootstrapAdmin'?'Primer superadministrador':'Cambio de usuario'}</summary><p>{detail.after?.email??detail.input?.email??detail.email??''}</p><p>{(detail.after?.roles??[]).map((r:keyof typeof roleNames)=>roleNames[r]).join(' · ')}</p>{log.action==='rolePermissions'&&<><p>Antes: {JSON.parse(detail.before.permissions).join(', ')}</p><p>Después: {detail.after.permissions.join(', ')}</p></>}</details>;})}</section>
+ </>}</>;
+}

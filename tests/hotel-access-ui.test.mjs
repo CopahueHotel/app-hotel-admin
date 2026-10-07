@@ -1,0 +1,28 @@
+import assert from 'node:assert/strict';
+import { test } from 'node:test';
+import React from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { fixture } from './helpers/hotel-fixture.mjs';
+import { loadUi } from './helpers/hotel-ui.mjs';
+test('read-only accounts have no editing controls and stock receipt screens omit financial columns',async t=>{
+ const f=await fixture(t),roles=f.load('modules/access/permissions.ts');
+ const identity={id:'ui-account',name:'UI Account',email:'ui@example.test',roles:['partner'],permissions:roles.initialPermissions.partner};
+ const data=await(await f.api.GET(new Request('http://localhost/api/hotel',{headers:{Cookie:f.cookie}}))).json();
+ const {AccessProvider}=loadUi(f,'modules/access/context.tsx');
+ const render=(Component,props,who=identity)=>renderToStaticMarkup(React.createElement(AccessProvider,{identity:who},React.createElement(Component,props)));
+ const {SupplierAgenda}=loadUi(f,'modules/suppliers/screen.tsx');
+ const agenda=render(SupplierAgenda,{data,date:'2026-10-03',onSave:async()=>{},onPurchase:()=>{}});
+ for(const label of ['Nuevo proveedor','Entrega puntual','Generar agenda','Exportar entregas CSV'])assert.ok(!agenda.includes(label),label);
+ const {MenuPlanner}=loadUi(f,'modules/menu/screen.tsx');
+ const menu=render(MenuPlanner,{data,date:'2026-10-03',onSave:async()=>{}});
+ for(const label of ['Copiar día / semana','Registrar / editar menú servido','Exportar menú CSV'])assert.ok(!menu.includes(label),label);
+ await f.post('purchaseDocument',{date:'2026-10-03',supplier:'Stock supplier',label:'Products to receive',area:'Restaurante',kind:'Variable',type:'Productos',category:'Productos',lines:[{product:'agua',category:'Bebidas',qty:3,cost:12}]});
+ const hash=await f.load('modules/access/passwords.ts').hashPassword('test-ui-password');
+ await f.raw.prepare('INSERT INTO users (id,name,email,active,roles,password_hash,version) VALUES (?,?,?,1,?,?,0)').bind('stock-user','Stock User','stock@example.test','["supply"]',hash).run();
+ const session=await f.auth.login(f.authRequest('/api/auth/login',{email:'stock@example.test',password:'test-ui-password'}));
+ const stockData=await(await f.api.GET(new Request('http://localhost/api/hotel',{headers:{Cookie:session.headers.get('set-cookie').split(';')[0]}}))).json();
+ const {Purchases}=loadUi(f,'modules/purchases/screen.tsx');
+ const html=render(Purchases,{data:stockData,date:'2026-10-03',onSave:async()=>{}},stockData.identity);
+ assert.ok(html.includes('Recibir'));assert.ok(html.includes('Stock supplier'));
+ for(const text of ['Pagar','Pagos:','Saldo:','NaN','costo','Total / pagos / saldo','Nuevo comprobante'])assert.ok(!html.includes(text),text);
+});

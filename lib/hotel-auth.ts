@@ -1,37 +1,23 @@
-import { env } from 'cloudflare:workers';
 import { database } from '@/lib/hotel-db';
+import { digest,passwordMatches } from '@/modules/access/passwords';
+import { permissionCatalog,type Identity } from '@/modules/access/permissions';
+import { env } from 'cloudflare:workers';
 
 const cookieName = 'hotel_session';
 const lifetime = 8 * 60 * 60;
 const hex = (bytes: Uint8Array) => Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('');
-const unhex = (value: string) => Uint8Array.from(value.match(/../g) ?? [], b => parseInt(b, 16));
 const now = () => Math.floor(Date.now() / 1000);
 
 function configuration() {
-  const hash = env.AUTH_PASSWORD_HASH;
   const origin = env.AUTH_ORIGIN;
-  if (!hash || !/^pbkdf2-sha256:100000:[a-f0-9]{32}:[a-f0-9]{64}$/.test(hash) || !origin) {
+  if (!origin) {
     throw new Error('AUTH_NOT_CONFIGURED');
   }
   const url = new URL(origin);
   if (url.origin !== origin || (url.protocol !== 'https:' && !(url.protocol === 'http:' && ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname)))) {
     throw new Error('AUTH_NOT_CONFIGURED');
   }
-  return { hash, origin, secure: url.protocol === 'https:' };
-}
-
-async function digest(value: string) {
-  return hex(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value))));
-}
-
-async function passwordMatches(password: string, stored: string) {
-  const [, iterations, salt, expected] = stored.split(':');
-  const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveBits']);
-  const actual = new Uint8Array(await crypto.subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-256', salt: unhex(salt), iterations: Number(iterations) }, key, 256));
-  const wanted = unhex(expected);
-  let difference = 0;
-  for (let i = 0; i < actual.length; i++) difference |= actual[i] ^ wanted[i];
-  return difference === 0;
+  return { origin, secure: url.protocol === 'https:' };
 }
 
 function sessionToken(request: Request) {
@@ -63,20 +49,31 @@ export function checkOrigin(request: Request): Response | null {
   }
 }
 
-export async function requireSession(request: Request): Promise<Response | null> {
-  try {
-    const config = configuration();
-    const token = sessionToken(request);
-    if (!token) return authError(401, 'Ingresá para acceder al hotel.');
-    const session = await database().prepare('SELECT expires,password_version FROM auth_sessions WHERE token_hash=?')
-      .bind(await digest(token)).first<{ expires: number; password_version: string }>();
-    if (!session || session.expires <= now() || session.password_version !== await digest(config.hash)) {
-      return authError(401, 'La sesión venció. Volvé a ingresar.');
-    }
-    return null;
-  } catch {
-    return authError(503, 'El acceso no está disponible. Revisá la configuración y las migraciones locales.');
-  }
+export async function sessionIdentity(request:Request):Promise<Identity|Response>{
+ try{
+  configuration();
+  const token=sessionToken(request);
+  if(!token)return authError(401,'Ingresá para acceder al hotel.');
+  const sessionHash=await digest(token),db=database();
+  const results=await db.batch([
+   db.prepare('SELECT u.id,u.name,u.email,u.roles,u.password_hash,s.password_version FROM auth_sessions s JOIN users u ON u.id=s.user_id WHERE s.token_hash=? AND s.expires>? AND u.active=1').bind(sessionHash,now()),
+   db.prepare('SELECT id,permissions FROM roles'),
+   db.prepare('SELECT revision FROM access_state WHERE id=1'),
+  ]);
+  const user=results[0].results[0] as {id:string;name:string;email:string;roles:string;password_hash:string;password_version:string}|undefined;
+  if(!user||user.password_version!==await digest(user.password_hash))return authError(401,'La sesión venció. Volvé a ingresar.');
+  const assigned=JSON.parse(user.roles) as string[];
+  const roleRows=results[1].results as {id:string;permissions:string}[];
+  const permissions=assigned.includes('superadmin')?permissionCatalog:[...new Set(roleRows.filter(r=>assigned.includes(r.id)).flatMap(r=>JSON.parse(r.permissions) as string[]))];
+  return {id:user.id,name:user.name,email:user.email,roles:assigned,permissions,revision:Number((results[2].results[0] as {revision:number}).revision),sessionHash};
+ }catch{return authError(503,'El acceso no está disponible. Revisá la configuración y las migraciones locales.');}
+}
+export async function requireSession(request:Request):Promise<Response|null>{
+ const identity=await sessionIdentity(request);return identity instanceof Response?identity:null;
+}
+export function accessGuard(db:D1Database,identity:Identity){
+ const id=crypto.randomUUID();
+ return {start:db.prepare('INSERT INTO access_checks (id,user_id,session_hash,revision) VALUES (?,?,?,?)').bind(id,identity.id,identity.sessionHash,identity.revision),end:db.prepare('DELETE FROM access_checks WHERE id=?').bind(id)};
 }
 
 export async function login(request: Request): Promise<Response> {
@@ -99,7 +96,7 @@ export async function login(request: Request): Promise<Response> {
     const bytes = new Uint8Array(size);
     let offset = 0;
     for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.length; }
-    const body = JSON.parse(new TextDecoder().decode(bytes)) as { password?: unknown };
+    const body = JSON.parse(new TextDecoder().decode(bytes)) as { email?: unknown; password?: unknown };
     if (typeof body?.password !== 'string' || !body.password.length || body.password.length > 256) return authError(400, 'Ingresá la contraseña.');
     const db = database();
     const timestamp = now();
@@ -116,12 +113,15 @@ export async function login(request: Request): Promise<Response> {
       throw error;
     }
     const config = configuration();
-    if (!await passwordMatches(body.password, config.hash)) return authError(401, 'Contraseña incorrecta.');
+    const email=typeof body.email==='string'?body.email.trim().toLowerCase():'';
+    const user=await db.prepare('SELECT id,password_hash,active FROM users WHERE email=?').bind(email).first<{id:string;password_hash:string;active:number}>();
+    if(!user||!user.active||!await passwordMatches(body.password,user.password_hash))return authError(401,'Email o contraseña incorrectos.');
     const token = hex(crypto.getRandomValues(new Uint8Array(32)));
-    await db.batch([
+    const inserted=await db.batch([
       db.prepare('DELETE FROM auth_sessions WHERE expires<=?').bind(timestamp),
-      db.prepare('INSERT INTO auth_sessions (token_hash,password_version,expires) VALUES (?,?,?)').bind(await digest(token), await digest(config.hash), timestamp + lifetime),
+      db.prepare('INSERT INTO auth_sessions (token_hash,password_version,expires,user_id) SELECT ?,?,?,? WHERE EXISTS (SELECT 1 FROM users WHERE id=? AND active=1 AND password_hash=?)').bind(await digest(token), await digest(user.password_hash), timestamp + lifetime,user.id,user.id,user.password_hash),
     ]);
+    if(inserted[1].meta.changes!==1)return authError(401,'El acceso cambió. Volvé a ingresar.');
     return Response.json({ ok: true }, { headers: { 'Cache-Control': 'no-store', 'Set-Cookie': cookie(token, config.secure) } });
   } catch (error) {
     if (error instanceof SyntaxError) return authError(400, 'Solicitud inválida.');

@@ -7,7 +7,7 @@ import { z } from 'zod';
 import path from 'node:path';
 export const testPassword = 'test-only-password';
 const salt = '0123456789abcdef0123456789abcdef';
-const passwordHash = 'pbkdf2-sha256:100000:' + salt + ':' + pbkdf2Sync(testPassword, Buffer.from(salt, 'hex'), 100000, 32, 'sha256').toString('hex');
+const passwordHash = 'pbkdf2-sha256:600000:' + salt + ':' + pbkdf2Sync(testPassword, Buffer.from(salt, 'hex'), 600000, 32, 'sha256').toString('hex');
 
 // Run the actual API against an isolated, nonpersistent D1/Miniflare database.
 // Only the binding is injected; SQL, triggers and transactional batches are real.
@@ -27,6 +27,7 @@ export async function fixture(t, beforeMigration) {
       .filter(sql=>sql.trim()).map(sql=>raw.prepare(sql));
     if(statements.length)await raw.batch(statements);
   }
+  await raw.prepare('INSERT INTO users (id,name,email,active,roles,password_hash,version) VALUES (?,?,?,1,?,?,0)').bind('test-admin','Test Administrator','admin@example.test','["superadmin"]',passwordHash).run();
   let gate;
   const db = {
     prepare(sql) {
@@ -70,7 +71,7 @@ export async function fixture(t, beforeMigration) {
   const api = load('app/api/hotel/route.ts');
   const authRequest = (path, data, headers = {}) => new Request('http://localhost' + path, {
     method: 'POST', headers: { 'Content-Type': 'application/json', Origin: authEnv.AUTH_ORIGIN, ...headers },
-    body: JSON.stringify(data),
+    body: JSON.stringify(path==='/api/auth/login'?{email:'admin@example.test',...data}:data),
   });
   const signedIn = await auth.login(authRequest('/api/auth/login', { password: testPassword }));
   assert.equal(signedIn.status, 200);

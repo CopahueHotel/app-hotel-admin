@@ -1,12 +1,13 @@
+import { loadUi } from './helpers/hotel-ui.mjs';
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { readFileSync } from 'node:fs';
-import { createRequire } from 'node:module';
-import ts from 'typescript';
+
+
+
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { fixture } from './helpers/hotel-fixture.mjs';
-const require=createRequire(import.meta.url);
+
 test('beverage and supplier screens expose destinations, separate stock/payment actions, due filters and historical meaning',async t=>{
  const f=await fixture(t),date='2026-10-03',who={responsible:'Operador de prueba',observation:'Conservar observación'};
  assert.equal((await f.post('beverageAccount',{date,time:'12:00',table:'Mesa 7',...who})).status,200);
@@ -14,14 +15,7 @@ test('beverage and supplier screens expose destinations, separate stock/payment 
  await f.post('beverageDispatch',{date,time:'13:25',product:'agua',qty:2,price:12.34,destination:'Mesa',tableAccount:a.id,mode:'Pendiente',customer:'Mesa 7',account:'Banco',...who});
  await f.post('purchaseDocument',{date,due:'',supplier:'Proveedor de prueba',label:'Bebidas para recibir',invoice:'TEST-1',area:'Hotel',kind:'Variable',type:'Productos',category:'Productos',lines:[{product:'agua',category:'Bebidas',qty:4,cost:12.34}],...who});
  const data=await(await f.api.GET(new Request('http://localhost/api/hotel',{headers:{Cookie:f.cookie}}))).json();
- const exports={},code=ts.transpileModule(readFileSync('components/hotel-supply.tsx','utf8'),{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX}}).outputText;
- new Function('require','exports',code)(name=>{
-  if(name==='@/lib/hotel-supply-view')return f.load('lib/hotel-supply-view.ts');
-  if(name==='@/lib/hotel-view')return f.load('lib/hotel-view.ts');
-  if(name==='@/components/ui/button')return {Button:props=>{const attrs={...props};delete attrs.variant;return React.createElement('button',attrs);}};
-  if(name==='@/components/ui/input')return {Input:props=>React.createElement('input',props)};
-  return require(name);
- },exports);
+ const exports=loadUi(f,'components/hotel-supply.tsx');
  const beverage=renderToStaticMarkup(React.createElement(exports.Beverages,{data,date,onSave:async()=>{}}));
  for(const label of ['Mesa 7','13:25','Pendiente de cobro','Despachar bebida','Cobrar / transferir','Devolución física','Corregir','Conservar observación','Historial de movimientos'])assert.ok(beverage.includes(label),label);
  const purchase=renderToStaticMarkup(React.createElement(exports.Purchases,{data,date,onSave:async()=>{}}));

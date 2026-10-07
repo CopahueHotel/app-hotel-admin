@@ -4,10 +4,17 @@ import test from 'node:test';
 import ts from 'typescript';
 import { fixture } from './helpers/hotel-fixture.mjs';
 
-const view = {};
-new Function('exports', ts.transpileModule(readFileSync('lib/hotel-view.ts', 'utf8'), {
-  compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS },
-}).outputText)(view);
+function loadView(file) {
+  const exports = {};
+  new Function('exports', 'require', ts.transpileModule(readFileSync(file, 'utf8'), {
+    compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS },
+  }).outputText)(exports, name => {
+    assert.ok(name.startsWith('@/'), 'Unexpected view dependency: ' + name);
+    return loadView(name.slice(2) + '.ts');
+  });
+  return exports;
+}
+const view = loadView('lib/hotel-view.ts');
 
 test('guest sales paid immediately appear in history without increasing debt or collection limits', async t => {
   const f = await fixture(t);

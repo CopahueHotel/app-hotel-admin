@@ -1,0 +1,23 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { DatabaseSync } from 'node:sqlite';
+import { mkdtempSync,mkdirSync,readFileSync,readdirSync,rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+import { spawnSync } from 'node:child_process';
+import { pbkdf2Sync } from 'node:crypto';
+test('first superadministrator is created only by the local console, with a random password and an attributable audit',t=>{
+ const root=mkdtempSync(path.join(tmpdir(),'hotel-bootstrap-'));t.after(()=>{assert.ok(path.resolve(root).startsWith(path.resolve(tmpdir())+path.sep)&&path.basename(root).startsWith('hotel-bootstrap-'));rmSync(root,{recursive:true,force:true});});
+ const folder=path.join(root,'.wrangler/state/v3/d1');mkdirSync(folder,{recursive:true});
+ const db=new DatabaseSync(path.join(folder,'test.sqlite'));
+ for(const file of readdirSync('drizzle').filter(f=>f.endsWith('.sql')).sort())db.exec(readFileSync('drizzle/'+file,'utf8'));
+ const script=path.resolve('scripts/bootstrap-admin.mjs');
+ const first=spawnSync(process.execPath,[script,'Test Administrator','admin@example.test'],{cwd:root,encoding:'utf8'});
+ assert.equal(first.status,0,first.stderr);
+ const password=first.stdout.match(/una sola vez\): ([^\n]+)/)?.[1];assert.ok(password&&password.length>=24);
+ const user=db.prepare('SELECT * FROM users').get();assert.equal(user.active,1);assert.deepEqual(JSON.parse(user.roles),['superadmin']);
+ const [,rounds,salt,hash]=user.password_hash.split(':');assert.equal(Number(rounds),600000);assert.equal(hash,pbkdf2Sync(password,Buffer.from(salt,'hex'),Number(rounds),32,'sha256').toString('hex'));
+ const audit=db.prepare('SELECT * FROM audit_log').get();assert.equal(audit.actor_id,user.id);assert.ok(!audit.detail.includes(password));
+ const second=spawnSync(process.execPath,[script,'Second Administrator','second@example.test'],{cwd:root,encoding:'utf8'});assert.notEqual(second.status,0);assert.equal(db.prepare('SELECT COUNT(*) n FROM users').get().n,1);
+ db.close();
+});

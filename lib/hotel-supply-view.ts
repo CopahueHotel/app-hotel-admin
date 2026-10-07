@@ -1,8 +1,9 @@
 import type { HotelData, Expense } from './hotel-types';
 import { serializeCsv } from './hotel-view';
+import { remainingAmount } from '@/modules/shared/money';
 export function supplierBalance(data:HotelData,e:Expense,date?:string){
  const paid=Math.max(0,-data.cash_movements.filter(m=>m.kind==='Pago'&&m.ref===e.id&&(!date||m.date<=date)).reduce((n,m)=>n+m.amount,0));
- const balance=e.amount-paid;
+ const balance=remainingAmount(e.amount,0,paid);
  return {paid,balance,status:balance===0?'Pagado':paid>0?'Parcialmente pagado':'Pendiente'};
 }
 export function dueLabel(e:Expense,balance:number,date:string){

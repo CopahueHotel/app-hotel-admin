@@ -1,0 +1,23 @@
+'use client';
+
+import { Input } from '@/components/ui/input';
+import type { HotelData } from '@/lib/hotel-types';
+import { currency } from '@/lib/hotel-view';
+import { ActionButton as Button,SessionResponsible,useIdentity } from '@/modules/access/context';
+import { can } from '@/modules/access/permissions';
+import { useRef,useState,type FormEvent,type ReactNode } from 'react';
+export type Props={data:HotelData;date:string;onSave:(action:string,values:unknown)=>Promise<void>};
+export const accounts=['Efectivo','Banco','Billetera'],rubros=['Bebidas','Alimentos','Limpieza','Amenities','Reutilizables'];
+export function Field({label,name,type='text',value='',required=true,min,step,readOnly=false}:{label:string;name:string;type?:string;value?:string|number;required?:boolean;min?:string;step?:string;readOnly?:boolean}){return <label className="field"><span>{label}</span><Input name={name} type={type} defaultValue={value} required={required} min={min} step={step} readOnly={readOnly}/></label>;}
+export function Choice({label,name,options,value,onChange}:{label:string;name:string;options:(string|[string,string])[];value?:string;onChange?:(s:string)=>void}){const identity=useIdentity();const visible=options.filter(o=>{
+ const value=typeof o==='string'?o:o[0];
+ const needed=name==='mode'?(value==='Inmediato'?'restaurant.collect':value==='Estadía'?'restaurant.charge':null):name==='method'?(value==='Cobro'?'restaurant.collect':value==='Estadía'?'restaurant.charge':null):name==='destination'?(value==='Cortesía'||value==='Interno'?'restaurant.special':value==='Estadía'?'restaurant.charge':null):null;
+ return !identity||!needed||can(identity,needed);
+});return <label className="field"><span>{label}</span><select className="control" name={name} value={onChange?value:undefined} defaultValue={onChange?undefined:value} onChange={e=>onChange?.(e.target.value)}>{visible.map(o=>{const [v,l]=typeof o==='string'?[o,o]:o;return <option key={v} value={v}>{l}</option>;})}</select></label>;}
+export function Editor({title,date,children,onSubmit,onCancel}:{title:string;date:string;children:ReactNode;onSubmit:(v:Record<string,FormDataEntryValue>)=>Promise<void>;onCancel:()=>void}){
+ const [busy,setBusy]=useState(false),[error,setError]=useState(''),lock=useRef(false);
+ async function submit(e:FormEvent<HTMLFormElement>){e.preventDefault();if(lock.current)return;lock.current=true;setBusy(true);setError('');try{await onSubmit(Object.fromEntries(new FormData(e.currentTarget)));onCancel();}catch(e){setError(e instanceof Error?e.message:'No se pudo guardar.');}finally{lock.current=false;setBusy(false);}}
+ return <form className="entry-form supply-editor" onSubmit={submit}><h3>{title}</h3><div className="form-grid"><Field label="Fecha del movimiento" name="date" type="date" value={date}/><SessionResponsible/><Field label="Observación" name="observation" required={false}/>{children}</div>{error&&<p className="notice error" role="alert">{error}</p>}<div className="form-actions"><Button type="button" variant="outline" onClick={onCancel} disabled={busy}>Volver</Button><Button disabled={busy}>{busy?'Guardando…':'Guardar'}</Button></div></form>;
+}
+export function Table({headers,rows}:{headers:string[];rows:ReactNode[][]}){return <div className="table-wrap"><table className="supply-table"><thead><tr>{headers.map(h=><th key={h}>{h}</th>)}</tr></thead><tbody>{rows.length?rows.map((r,i)=><tr key={i}>{r.map((c,j)=><td key={j}>{c}</td>)}</tr>):<tr><td colSpan={headers.length}>No hay registros.</td></tr>}</tbody></table></div>;}
+export function History({data,actions}:{data:HotelData;actions:string[]}){const names:Record<string,string>={beverageAccount:'Apertura de cuenta',beverageDispatch:'Despacho de bebida',beverageSettle:'Cierre de cuenta',beverageReturn:'Devolución física',beverageCorrect:'Corrección de despacho',purchaseDocument:'Nuevo comprobante',purchaseReceive:'Recepción de productos',supplierPay:'Pago a proveedor'};return <details className="supply-history"><summary>Historial de movimientos</summary>{data.audit_log.filter(a=>actions.includes(a.action)).sort((a,b)=>b.created.localeCompare(a.created)).map(a=>{const detail=JSON.parse(a.detail),d=detail.input??detail;return <div key={a.id}><b>{names[a.action]??a.action}</b> · {new Date(a.created).toLocaleString('es-AR',{timeZone:'America/Argentina/Buenos_Aires'})}<p>{d.responsible??a.actor} · {d.reason??d.label??d.reference??d.table??''} {d.observation??''}</p><small>{d.qty?`Cantidad: ${d.qty}. `:''}{d.amount?`Importe: ${currency(Number(d.amount)*100)}. `:''}{d.lines?`${d.lines.length} líneas. `:''}{d.method??d.mode??''}</small></div>;})}</details>;}

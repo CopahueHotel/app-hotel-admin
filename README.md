@@ -18,13 +18,14 @@ La interfaz usa **React y TypeScript**, con Vinext/Vite y CSS. Necesita un servi
 npm.cmd ci
 npm.cmd run db:local
 npm.cmd run auth:setup
+npm.cmd run auth:bootstrap -- "Nombre completo" email@dominio.com
 npm.cmd run dev
 ```
 
 4. Abrí **http://localhost:5173**. Si el puerto está ocupado, usá la dirección indicada por la terminal.
 5. Dejá la terminal abierta. `Ctrl+C` detiene el servidor.
 
-`auth:setup` genera una contraseña aleatoria, la muestra una vez y guarda solamente su hash en `.dev.vars`, fuera de Git. Guardá la contraseña en tu gestor de contraseñas e ingresala en la pantalla de acceso. Si el servidor cambia de puerto, editá `AUTH_ORIGIN` en `.dev.vars` para que coincida con la dirección que usás en el navegador, y reiniciá el servidor. El comando no sobrescribe un `.dev.vars` existente.
+`auth:setup` configura solamente `AUTH_ORIGIN` en `.dev.vars`, fuera de Git. `auth:bootstrap` crea el primer superadministrador en la base local y muestra una contraseña aleatoria una sola vez. Guardala en tu gestor de contraseñas e ingresá con email y contraseña. Si el servidor cambia de puerto, editá `AUTH_ORIGIN` para que coincida con la dirección que usás en el navegador y reiniciá el servidor. `auth:setup` no sobrescribe un `.dev.vars` existente.
 
 `npm.cmd` evita el bloqueo de `npm.ps1` por PowerShell sin cambiar la política de ejecución. En macOS/Linux usá `npm` en lugar de `npm.cmd`.
 
@@ -76,7 +77,7 @@ En la ficha, **Editar reserva y condiciones** permite modificar reservas confirm
 
 En **Calendario → Bloquear noches por mantenimiento**, indicá habitación, desde incluido/hasta excluido, motivo y responsable. El bloqueo impide nuevas asignaciones; no desplaza reservas existentes. Liberarlo conserva su registro y el motivo en el historial. El estado global "Fuera de servicio" también impide reservar. Las confirmadas y alojadas bloquean noches; una salida permite otra llegada ese mismo día. La cancelación conserva la reserva y libera las noches sólo si no tiene pagos ni consumos. No se agregaron provisionales ni vencimientos automáticos.
 
-El responsable se declara porque el login actual es compartido; no es una identidad individual verificada. La revisión visual interactiva y las regularizaciones/devoluciones completas quedan pendientes. Esta etapa no agrega funciones de comidas, stock, personal ni integraciones.
+Los responsables declarados antes de HOT-15 se conservan como históricos; los cambios nuevos usan la identidad autenticada. La revisión visual interactiva y las regularizaciones/devoluciones completas quedan pendientes. Esta etapa no agrega funciones de comidas, stock, personal ni integraciones.
 
 ## Alimentación, asistencia y salidas · etapa 2
 
@@ -92,7 +93,7 @@ En **Restaurante**, elegí fecha y desayuno/almuerzo/cena. El listado muestra un
 
 Se conserva la regla actual **[llegada, salida)** para las comidas incluidas. En la fecha de salida, los servicios se muestran **sin confirmar**, con cero personas previstas, hasta registrar una previsión adicional explícita. La definición comercial de comidas incluidas de llegada/salida sigue pendiente con el gerente. La elección diaria de MP y los servicios respetan también las fechas cerradas.
 
-**Exportar listado CSV** descarga el servicio de la fecha con restricciones, preferencias, observaciones, suspensión y estado para cocina. La ficha conserva el historial con fecha, responsable declarado y detalle; el acceso sigue siendo compartido, sin roles individuales.
+**Exportar listado CSV** descarga el servicio de la fecha con restricciones, preferencias, observaciones, suspensión y estado para cocina, cuando el rol permite exportar. La ficha conserva el historial con fecha y detalle; los cambios nuevos identifican al usuario autenticado.
 
 El **Resumen diario → Próximas salidas** y las fichas muestran noches restantes, salida hoy/mañana o salida pendiente de registrar. Usan la fecha de consulta y la zona del hotel **America/Argentina/Buenos_Aires**, excluyen canceladas y no cierran estadías ni envían mensajes. Las finalizadas muestran su estado.
 
@@ -108,7 +109,7 @@ En **Compras y gastos → Nuevo comprobante**, indicá proveedor, número opcion
 
 **Pagar** permite pagos parciales con fecha, Efectivo/Banco/Billetera, referencia y responsable. No recibe productos. Total, pagos, saldo y pendiente/parcial/pagado se derivan de los movimientos; no hay casilla de deuda pagada. La lista se ordena por vencimiento, muestra los no definidos al final y distingue vencido, hoy y próximo en los siguientes siete días según la fecha de consulta. Los pagos y recepciones del listado se calculan hasta esa fecha; los formularios validan el saldo y lo pendiente actuales. Los filtros y **Exportar proveedores CSV** comparten el mismo detalle visible y usan el formato de Excel en español.
 
-Cada operación conserva fecha, responsable declarado y detalle en el historial, y guarda juntos sus movimientos con protección de reintentos. El login sigue siendo compartido; usuarios individuales y permisos por módulo se implementarán después de las etapas acordadas. Esta etapa no agrega pagos automáticos, reaperturas, devoluciones de dinero, adjuntos de comprobantes ni valoración/utilidad de stock.
+Cada operación conserva fecha, responsable y detalle en el historial, y guarda juntos sus movimientos con protección de reintentos. HOT-15 reemplaza el login compartido por cuentas individuales y permisos por módulo. Esta etapa no agrega pagos automáticos, reaperturas, devoluciones de dinero, adjuntos de comprobantes ni valoración/utilidad de stock.
 
 ## Proveedores, menú y personal · etapa 4
 
@@ -126,7 +127,7 @@ En **Personal**, cargá las fichas y usá **Programar turno / ausencia**. Los tu
 
 **Registrar asistencia** requiere indicar asistencia o ausencia y, si asistió, inicio/fin reales en horario de Buenos Aires. No copia automáticamente el turno previsto. Una planificación con asistencia registrada conserva sus fechas; las correcciones de asistencia quedan trazadas. **Nueva novedad** permite tarea/novedad/incidencia/seguimiento, fecha, descripción y turno opcional del mismo empleado. Resolver exige seguimiento; el autor original se conserva y cada edición registra al responsable declarado. Desactivar un empleado conserva sus turnos y reportes, impide nuevas asignaciones y permite resolver reportes anteriores. Hay exportaciones separadas de turnos y novedades con los filtros visibles.
 
-Las notas internas se consultan únicamente desde Personal y su endpoint autenticado `/api/hotel/personnel`; no se incluyen en la respuesta operativa general ni su historial visible en cocina/recepción. **Esto no implementa permisos por rol**: la contraseña compartida permite consultar Personal. Los usuarios individuales y permisos por módulo siguen pendientes, según el orden acordado. La revisión interactiva con el gerente también continúa pendiente. No se incorporaron recetas, costos, pedidos automáticos, liquidación de sueldos, horas extra automáticas ni evaluaciones.
+Las notas internas se consultan únicamente desde Personal y su endpoint autenticado `/api/hotel/personnel`; no se incluyen en la respuesta operativa general ni su historial visible en cocina/recepción. HOT-15 a HOT-18 agrega cuentas individuales y exige permisos separados para consultar Personal y sus novedades internas. La revisión interactiva con el gerente continúa pendiente. No se incorporaron recetas, costos, pedidos automáticos, liquidación de sueldos, horas extra automáticas ni evaluaciones.
 
 ## Codex en VS Code
 
@@ -177,6 +178,45 @@ Los siguientes cambios se suben con `git add .`, `git commit -m "Descripcion del
 | `AGENTS.md` | Instrucciones para Codex |
 | `ALCANCE.md` | Funciones y pendientes |
 
+## Usuarios, permisos y organización modular · HOT-15 a HOT-19
+
+La migración `0009_rapid_fallen_one` agrega cuentas individuales, roles, controles de acceso y referencias de usuario en sesiones, operaciones e historial. Conserva los registros anteriores: los responsables históricos no se reconstruyen. Las sesiones del acceso compartido anterior dejan de ser válidas; `AUTH_PASSWORD_HASH` ya no habilita ningún ingreso. Se mantiene el origen HTTPS y las cookies de sesión HttpOnly, SameSite y Secure cuando corresponde, con duración de ocho horas y revocación al salir. Las contraseñas individuales usan PBKDF2-HMAC-SHA256 con sal aleatoria y 600.000 iteraciones; nunca se devuelven hashes al navegador ni se guardan contraseñas en el historial. Se conserva el límite global de 20 intentos cada 15 minutos. Referencia técnica: [almacenamiento de contraseñas OWASP](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html).
+
+**Primer superadministrador en una copia existente:** detené el servidor, respaldá `.wrangler/state/` y `.dev.vars`, conservá el `AUTH_ORIGIN` actual y ejecutá desde la raíz:
+
+```powershell
+npm.cmd run db:local
+npm.cmd run auth:bootstrap -- "Nombre completo" email@dominio.com
+npm.cmd run dev
+```
+
+En una instalación nueva ejecutá también `npm.cmd run auth:setup` antes de crear el usuario. En Linux usá `npm` en lugar de `npm.cmd`. El procedimiento trabaja exclusivamente sobre una única base local migrada; el servidor debe estar detenido para evitar escrituras concurrentes externas. Rechaza volver a crear el primer usuario si ya existen cuentas. No hay formulario ni endpoint público de registro o elevación de privilegios. Guardá la contraseña mostrada en un gestor; no la copies a Git, archivos de configuración ni conversaciones. La cuenta queda registrada como creada mediante consola por su titular. Esta etapa no crea ninguna cuenta automáticamente en tu base ni en el VPS.
+
+**Alta y acceso:** ingresá con la primera cuenta y abrí **Usuarios y permisos → Crear usuario**. Indicá nombre, email, estado, uno o varios roles y una contraseña de al menos 12 caracteres. Cada persona tiene su propia cuenta; los roles no crean cuentas compartidas por sector. Entregá el acceso por un medio privado. **Modificar** cambia datos, estado y roles; desactivar conserva todo el historial y revoca el acceso. **Restablecer acceso** define una nueva contraseña y revoca las sesiones anteriores, incluyendo la propia si se restablece esa cuenta.
+
+**Matriz:** en la misma pantalla, **Permisos por rol → Modificar matriz** permite habilitar consulta, creación, modificación, regularización existente, exportación y funciones específicas. Los permisos de varios roles se suman; no hay excepciones individuales. Consultar no permite modificar. Para usar una pantalla hay que habilitar su consulta y luego las acciones que correspondan. Cobros por estadía, pagos de compras, cargos de restaurante, precios, descuentos, acuerdos especiales, mermas, conteos, cierres y novedades de personal tienen permisos independientes. Una copia de menú que reemplaza destinos requiere además modificar; una excepción de superposición en Personal requiere autorización especial.
+
+Roles iniciales:
+
+| Rol | Permisos iniciales |
+| --- | --- |
+| Superadministrador | Todos, incluyendo usuarios, permisos y configuración. Su conjunto está protegido. |
+| Administración | Caja, cobros, compras, pagos, proveedores, vencimientos e informes; consulta de reservas y consumos. Puede cobrar mesas existentes; no crea reservas ni despacha bebidas por ese rol. |
+| Gerente | Funciones operativas de reservas, restaurante, stock, compras, proveedores y personal; consulta financiera y cierre diario. Incluye cobros por estadía, pagos de proveedores y autorizaciones operativas; no administra usuarios/permisos ni configuración global, transferencias o aportes/retiros. |
+| Recepción | Reservas, huéspedes, entradas/salidas, alimentación, habitaciones, consulta de tarifas y saldos por estadía. Cobros, precios acordados, descuentos y acuerdos especiales requieren habilitación. |
+| Restaurante | Comensales, condiciones alimentarias, cuentas de mesa, consumos pendientes y despacho al precio del catálogo. Cobros, cargos, cambios de precio y cortesías requieren habilitación. |
+| Stock / Abastecimiento | Existencias, productos, entregas, mermas/conteos, recepción de compras y agenda de proveedores. No recibe importes de compras ni puede pagar a proveedores. |
+| Cocina | Menú, previsión, restricciones, suspensiones, servicios realizados y consulta de insumos. No recibe importes, condiciones económicas, cuentas generales ni notas de personal. |
+| Socio / Consulta | Consulta de paneles e informes autorizados y módulos operativos; no registra cambios ni exporta inicialmente. Personal y sus novedades se habilitan por separado. |
+
+Los controles se aplican en el servidor para cada acción y lectura, incluyendo llamadas directas. Cocina recibe únicamente los datos operativos necesarios; recepción puede consultar pagos/saldos de estadías sin recibir aperturas de caja, saldos generales o pagos a proveedores. Restaurante puede cargar a una estadía con el permiso específico sin recibir caja ni acuerdos económicos de reservas. Stock recibe información de cantidades y recepciones sin precios, pagos o deudas. Personal requiere consulta propia y sus reportes internos un permiso adicional. Las tablas vacías en la respuesta operativa representan información no habilitada o inexistente; las dependencias entre módulos entregan solamente los campos necesarios, como huésped, habitación y régimen para cocina.
+
+La sesión se verifica contra el usuario activo y los permisos vigentes en cada solicitud, sin confiar en encabezados o nombres enviados por formularios. Los cambios de roles/permisos quedan registrados con fecha, usuario y antes/después. También se valida una revisión de acceso dentro del batch transaccional: un cambio concurrente de acceso revierte la operación o impide entregar los datos. No se permite desactivar ni quitar el rol al último superadministrador activo. La interfaz actualiza su acceso al recuperar foco y cada 30 segundos; los controles del servidor son inmediatos. Los datos ya vistos o descargados no se pueden retirar del equipo del usuario.
+
+**Código:** `modules/` agrupa pantallas, formularios, validaciones y operaciones de reservas, habitaciones, tarifas, comidas, restaurante/bebidas, stock, compras, proveedores, menú, caja, personal, informes y acceso. `app/page.tsx` conserva la coordinación del espacio de trabajo; las rutas delegan las reglas en funciones de módulo. Los archivos anteriores de `lib/hotel-*` y `components/hotel-*` conservan exportaciones compatibles. Autenticación, tipos, persistencia, formatos, componentes visuales, fechas y el contexto transaccional se comparten. Una operación de bebida/compra/reserva sigue reuniendo todos sus movimientos e historial en un solo batch; separar archivos no separa la transacción.
+
+Pendientes dentro de la operación futura: revisión interactiva con el gerente de la matriz inicial y pantallas, recuperación extraordinaria de todas las credenciales por un administrador del servidor, recuperación por email, MFA y expiración obligatoria de contraseñas temporales. No se agregan reaperturas de cierres, aprobaciones por etapas, roles de facturación ni circuitos financieros nuevos para completar la matriz. Si se agregan operaciones nuevas deben registrarse expresamente en el catálogo y validar sus datos de salida; la ausencia de permiso se deniega.
+
 ## Persistencia y respaldo local
 
 Los registros se guardan en `.wrangler/state/`, fuera de Git. Cerrar VS Code no los elimina. Otra PC tendrá su propia base.
@@ -185,9 +225,9 @@ Para respaldarlos, detené el servidor y copiá esa carpeta fuera del repositori
 
 ## Uso real y alojamiento futuro
 
-La app incluye acceso de prueba con una contraseña compartida y sesión de ocho horas. Protege pantallas y API en el servidor, almacena sesiones con tokens hasheados y revoca la sesión al salir. Tiene un límite global persistente de 20 intentos de ingreso cada 15 minutos. Sin configuración válida o sin migraciones, no permite acceder a los registros. Todavía no tiene usuarios individuales ni permisos por rol.
+La app incluye cuentas individuales con roles y permisos verificadas en el servidor, sesiones de ocho horas con tokens hasheados y revocación al salir. Tiene un límite global persistente de 20 intentos de ingreso cada 15 minutos. Sin configuración válida, usuario activo o migraciones, no permite acceder a los registros.
 
-Antes del uso real hay que completar usuarios/permisos en el servidor, apertura real, respaldos, regularizaciones y revisión funcional. El login compartido no identifica a cada operador: los cambios se atribuyen a “Acceso compartido de prueba”. La API del hotel no usa encabezados `oai-authenticated-user-*` como identidad ni autorización.
+Antes del uso real hay que validar la matriz con el gerente y completar apertura real, respaldos, regularizaciones y revisión funcional. Los históricos del login compartido mantienen su atribución anterior; los cambios nuevos registran al usuario autenticado. La API del hotel no usa encabezados `oai-authenticated-user-*` como identidad ni autorización.
 
 ## Configurar acceso para testeo en un VPS
 
@@ -197,16 +237,17 @@ En el VPS, dentro de la copia del repositorio y con Node.js instalado:
 npm ci
 npm run db:local
 npm run auth:setup -- https://test.TU-DOMINIO
+npm run auth:bootstrap -- "Nombre completo" email@dominio.com
 npm run build
 npm start
 ```
 
-Reemplazá la URL por el dominio real, sin ruta ni barra final. El hash y el origen quedan en `.dev.vars`; no subas ese archivo ni copies la base de esta PC. El VPS tendrá su propia base de prueba. `npm start` usa Miniflare local, no una base remota de Cloudflare.
+Reemplazá la URL por el dominio real, sin ruta ni barra final. El origen queda en `.dev.vars`; los hashes individuales se guardan en la base. No subas esos archivos ni copies la base de esta PC. El VPS tendrá su propia base de prueba. `npm start` usa Miniflare local, no una base remota de Cloudflare. Para actualizar una instalación existente, conservá `.dev.vars`, aplicá la migración con el servidor detenido y creá el primer superadministrador antes de volver a habilitar el servicio; no regeneres el origen ni copies las cuentas de desarrollo.
 
 El servidor escucha solamente en `127.0.0.1:8787`. Configurá un proxy inverso con HTTPS para el dominio, que envíe las solicitudes a `http://127.0.0.1:8787` y conserve `Host`. No expongas Vite de desarrollo a Internet. El despliegue debe mantener el proceso activo y la carpeta `.wrangler/state/` entre reinicios y actualizaciones.
 
 La instalación de prueba en InterServer está documentada en [deploy/VPS.md](deploy/VPS.md). Se accede por HTTPS a la IP, con login y una base independiente. Los cambios de GitHub no se publican automáticamente.
 
-Para cambiar la contraseña, detené el servidor, respaldá y renombrá `.dev.vars` fuera del repositorio y ejecutá nuevamente `auth:setup` con el mismo origen. Conservá las otras variables si ya agregaste alguna. Reiniciá el servidor: las sesiones anteriores se invalidan automáticamente. HTTP solo se admite para pruebas en localhost; en un dominio público el acceso exige configurar HTTPS.
+Para cambiar una contraseña individual, usá **Usuarios y permisos → Restablecer acceso** con un superadministrador; las sesiones anteriores de esa cuenta se invalidan automáticamente. Conservá `.dev.vars` y su origen. HTTP solo se admite para pruebas en localhost; en un dominio público el acceso exige configurar HTTPS.
 
 Se incluyen fuentes, componentes, migraciones, configuración y lockfile. Se excluyen dependencias instaladas (`node_modules`), base local, compilados, secretos e historial `.git`.

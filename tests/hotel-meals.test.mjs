@@ -16,7 +16,7 @@ test('individual restrictions and preferences preserve other guests, contracted 
  const g=await f.one('SELECT * FROM booking_guests WHERE id=?',guests[1]);assert.equal(g.restrictions,'');
  const after=await f.one('SELECT * FROM bookings WHERE id=?',b.id);assert.equal(after.regime,b.regime);assert.equal(after.amount,b.amount);
  const rows=f.load('lib/hotel-meals.ts').kitchenRows(await data(f),'2026-11-30','Cena').filter(r=>r.booking===b.id);assert.equal(rows[0].restrictions,'Celiaquía: texto indicado');assert.equal(rows[1].restrictions,'');
- const log=await f.one("SELECT * FROM audit_log WHERE action='guestProfile'");assert.equal(JSON.parse(log.detail).input.responsible,who.responsible);assert.ok(log.created);
+ const log=await f.one("SELECT * FROM audit_log WHERE action='guestProfile'");assert.equal(JSON.parse(log.detail).input.responsible,'Test Administrator');assert.ok(log.created);
  assert.equal((await f.post('guestProfile',{guest:guests[0],version:0,...who})).status,409);
 });
 test('MP choice changes just the selected date without changing contracted meal or money',async t=>{

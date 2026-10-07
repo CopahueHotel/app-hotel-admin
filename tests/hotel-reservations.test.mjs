@@ -42,7 +42,7 @@ test('missing rates require an explained agreed price and special prices never c
  const f=await fixture(t);
  assert.equal((await f.post('booking',booking)).status,400);
  assert.equal((await f.post('booking',{...agreed,reason:''})).status,400);
- assert.equal((await f.post('booking',{...agreed,responsible:''})).status,400);
+ assert.equal((await f.post('booking',{...agreed,reason:''})).status,400);
  const before=await f.count('cash_movements'),b=await created(f);
  const terms=await f.one('SELECT * FROM booking_terms WHERE booking=?',b.id);
  assert.equal(terms.tariff_total,null);assert.equal(terms.base_amount,30075);

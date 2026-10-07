@@ -8,7 +8,7 @@ import { Miniflare } from 'miniflare';
 const password = 'http-smoke-only-password';
 const origin = 'https://test.hotel.example';
 const salt = 'abcdef0123456789abcdef0123456789';
-const passwordHash = `pbkdf2-sha256:100000:${salt}:${pbkdf2Sync(password, Buffer.from(salt, 'hex'), 100000, 32, 'sha256').toString('hex')}`;
+const passwordHash = `pbkdf2-sha256:600000:${salt}:${pbkdf2Sync(password, Buffer.from(salt, 'hex'), 600000, 32, 'sha256').toString('hex')}`;
 const mf = new Miniflare({
   modulesRoot: resolve('dist/server'),
   modules: [
@@ -26,6 +26,7 @@ try {
       if (sql.trim()) await db.prepare(sql).run();
     }
   }
+  await db.prepare('INSERT INTO users (id,name,email,active,roles,password_hash,version) VALUES (?,?,?,1,?,?,0)').bind('smoke-admin','Smoke Admin','smoke@example.test','["superadmin"]',passwordHash).run();
   const request = (path, options = {}) => mf.dispatchFetch('http://localhost' + path, { redirect: 'manual', ...options });
   const screen = await request('/');
   assert.ok([303, 307].includes(screen.status));
@@ -37,7 +38,7 @@ try {
   assert.equal(loginPage.status, 200);
   assert.match(await loginPage.text(), /Ingresar/);
   const signedIn = await request('/api/auth/login', {
-    method: 'POST', headers: { 'Content-Type': 'application/json', Origin: origin }, body: JSON.stringify({ password }),
+    method: 'POST', headers: { 'Content-Type': 'application/json', Origin: origin }, body: JSON.stringify({ email:'smoke@example.test',password }),
   });
   assert.equal(signedIn.status, 200);
   assert.match(signedIn.headers.get('set-cookie'), /; Secure/);
