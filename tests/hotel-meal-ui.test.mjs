@@ -19,6 +19,7 @@ test('kitchen and reservation rendering expose per-person conditions, exact tota
   if(name==='@/lib/hotel-meals')return f.load('lib/hotel-meals.ts');
   if(name==='@/lib/hotel-view')return f.load('lib/hotel-view.ts');
   if(name==='@/components/ui/button')return {Button:props=>{const attrs={...props};delete attrs.variant;return React.createElement('button',attrs);}};
+  if(name==='@/components/ui/input')return {Input:props=>React.createElement('input',props)};
   return require(name);
  },exports);
  const html=renderToStaticMarkup(React.createElement(exports.Kitchen,{data,date:'2026-10-04',onSave:async()=>{}}));
