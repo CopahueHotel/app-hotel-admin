@@ -32,6 +32,7 @@ export async function fixture(t, beforeMigration) {
         sql, values, statement,
         bind(...args) { return wrap(statement.bind(...args), args); },
         first(...args) { return statement.first(...args); },
+        all(...args) { return statement.all(...args); },
         run() { return statement.run(); },
       });
       return wrap(raw.prepare(sql));

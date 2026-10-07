@@ -36,3 +36,25 @@
   .detail-list dt:not(:first-child) { margin-top: 10px; }
   .kitchen-list > .meal-editor { margin: 18px; padding: 18px; }
 }
+.supply-editor { margin: 0 20px 20px; padding: 20px; border: 1px solid var(--border); border-radius: 12px; }
+.supply-editor h3, .supply-subheading { font-size: 16px; font-weight: 600; margin: 0 0 16px; }
+.supply-subheading { padding: 20px 20px 0; }
+.supply-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.supply-table th { text-align: left; color: var(--muted-foreground); font-weight: 500; }
+.supply-table th, .supply-table td { padding: 14px 18px; border-bottom: 1px solid var(--border); vertical-align: top; }
+.supply-table td small { display: block; color: var(--muted-foreground); margin-top: 4px; }
+.supply-table td { min-width: 120px; overflow-wrap: anywhere; }
+.supply-lines { grid-column: 1 / -1; min-width: 0; }
+.supply-line { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 12px; padding: 16px 0; border-bottom: 1px solid var(--border); margin-bottom: 12px; }
+.supply-total { display: block; font-size: 18px; margin-top: 14px; overflow-wrap: anywhere; }
+.supply-filters { display: grid; grid-template-columns: repeat(auto-fit,minmax(160px,1fr)); gap: 12px; padding: 18px 20px; }
+.supply-history { padding: 20px; font-size: 14px; }
+.supply-history summary { cursor: pointer; }
+.supply-history > div { padding: 12px 0; border-bottom: 1px solid var(--border); }
+.supply-history p { margin: 6px 0; }
+@media (max-width: 767px) {
+ .supply-editor { margin: 0 12px 16px; padding: 16px; }
+ .supply-line { grid-template-columns: minmax(0,1fr); }
+ .supply-filters { padding: 16px; }
+ .supply-table th, .supply-table td { padding: 12px; }
+}

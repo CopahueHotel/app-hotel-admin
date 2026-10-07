@@ -1,6 +1,10 @@
 # Alcance de la primera versión
 
 ## Implementado
+- HOT-08: despacho de bebidas con fecha/hora del hotel, destino físico, condición de cobro independiente, precio aplicado, motivo/responsable y observación. Cuentas identificables de mesa, cobro o transferencia a estadía, sin descontar stock nuevamente.
+- HOT-09: cortesías e internos sin caja ficticia; devoluciones físicas parciales acotadas al despacho; correcciones económicas mediante consumos compensatorios vinculados, sin borrar el original ni devolver stock automáticamente. Cobros, transferencias y días cerrados bloquean correcciones directas.
+- HOT-10: comprobante único con varias líneas de productos y rubros Bebidas/Alimentos/Limpieza/Amenities/Reutilizables; servicios y administrativos sin stock. Recepción parcial independiente del pago, opción explícita de recibido completo, actividad y Fijo/Variable conservados. Históricos sin reinterpretar.
+- HOT-11: saldos y estados de proveedor derivados de pagos, referencias y cuentas; vencimientos ordenados, vencido/próximo según fecha de consulta, vencimiento sin definir, filtros y CSV para Excel. Sin pagos automáticos.
 - HOT-04: condiciones de alimentación por persona, separando restricciones, preferencias y observaciones; MP con elección por día sin cambiar precio ni régimen.
 - HOT-05: suspensiones por persona, fecha/intervalo y servicio; reactivación con historial, previsión separada del servicio realizado y unicidad por persona/fecha/servicio. Sin ajustes económicos automáticos.
 - HOT-06: listado diario por servicio, huéspedes individuales y previsiones explícitas de clientes externos, totales separados y exportación CSV para cocina. Servicios de salida visibles sin confirmar según la regla vigente [llegada, salida).
@@ -27,7 +31,10 @@
 - Login de prueba con contraseña compartida, sesiones persistentes de ocho horas, cierre de sesión y protección de pantallas y API en el servidor; límite global de 20 intentos de acceso cada 15 minutos.
 
 ## Pendiente para uso operativo
-- Usuarios individuales y permisos de superadministrador, gerente y consulta en backend; el login compartido de prueba no tiene roles ni identifica a cada operador.
+- Orden acordado: terminar primero las etapas de mejoras previstas; después implementar usuarios individuales y completar la organización por módulos.
+- Separar pantallas y lógica de Calendario, Reservas, Restaurante, Caja y demás módulos, reutilizando los componentes existentes y conservando datos y transacciones compartidas.
+- Usuarios individuales con permisos por módulo y acción (consultar, crear, editar, cobrar, cerrar caja y administrar), verificados en el servidor y reflejados en el menú. Definir los perfiles con el gerente antes de implementarlos; el login compartido actual no tiene roles ni identifica a cada operador.
+- Limitar los datos que recibe cada módulo según los permisos: por ejemplo, Restaurante puede consultar habitación, huésped y condiciones alimentarias sin recibir pagos ni acuerdos económicos. Atribuir los cambios del historial al usuario autenticado.
 - Edición completa de habitaciones y productos; regularizaciones de reservas cerradas o con devoluciones. Esta etapa permite editar reservas confirmadas/alojadas sin invalidar consumos ni bajar el total por debajo de los cobros existentes.
 - Apertura real de saldos, stock, reservas y deudas.
 - Devoluciones, anulaciones y correcciones posteriores a cierres.
@@ -49,6 +56,8 @@ Los informes muestran movimientos de fondos y pendientes, no utilidad contable. 
 Se verificaron tipos, compilación y 15 operaciones sobre SQLite: superposiciones, bebida y stock, cobro, sobrecobro rechazado, comidas incluidas, compra, pago parcial, salidas excesivas rechazadas, transferencias y cierre. La revisión visual en navegador quedó pendiente.
 
 ## Pruebas locales de integridad
+La etapa 3 agrega `0007_serious_peter_parker` sin modificar registros anteriores. Las pruebas cubren despacho/cobro con una sola salida de stock, cuentas reutilizadas independientes, transferencia a estadía sin caja ficticia, motivos de cortesía/interno, devoluciones físicas y correcciones separadas, compras con varias líneas, recepción parcial, pago parcial, redondeo en centavos, vencimientos y conservación de los circuitos históricos. También cubren límites concurrentes de stock/recepción/pagos/devoluciones, cierre de mesa frente a un despacho concurrente, rollback y días cerrados. Se verifican tipos, lint, compilación, acceso HTTP compilado y representación de las nuevas pantallas. La revisión interactiva con el gerente continúa pendiente.
+
 La etapa 2 usa la migración `0006_meal_stage_two`. Sus pruebas cubren restricciones para una sola persona, cambios diarios de MP, suspensiones y reactivaciones sin dinero, intervalos, servicio explícito y duplicaciones concurrentes, carreras suspensión/servicio, previsiones adicionales y externas, conservación histórica, fechas cerradas, salida visible pendiente, totales y representación de las pantallas. También verifican fecha del hotel y noches restantes al cambiar de mes. La revisión visual interactiva con el gerente continúa pendiente.
 
 `npm.cmd test` ejecuta la API contra bases temporales D1/Miniflare sin persistencia. Cubre cierres y comidas concurrentes, cambio de MP tras servir, reintentos y claves duplicadas, rollback, migración de comidas históricas, cargos, cobros, compras, pagos a proveedores, transferencias, stock y superposición de reservas. No usa los registros de `.wrangler/state/`.

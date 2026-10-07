@@ -96,6 +96,20 @@ Se conserva la regla actual **[llegada, salida)** para las comidas incluidas. En
 
 El **Resumen diario → Próximas salidas** y las fichas muestran noches restantes, salida hoy/mañana o salida pendiente de registrar. Usan la fecha de consulta y la zona del hotel **America/Argentina/Buenos_Aires**, excluyen canceladas y no cierran estadías ni envían mensajes. Las finalizadas muestran su estado.
 
+## Bebidas, compras y vencimientos · etapa 3
+
+Aplicá `npm.cmd run db:local` para `0007_serious_peter_parker`. Agrega registros vinculados sin modificar reservas, consumos, stock ni pagos existentes. Las compras históricas mantienen su ingreso inmediato de stock; no se convierten a compras pendientes. Los consumos anteriores no reciben un destino ni una hora inventados.
+
+En **Restaurante → Bebidas y cuentas de mesa**, abrí una cuenta por cada nueva ocupación de una mesa. Su identificador distingue cuentas aunque se reutilice el mismo número. **Despachar bebida** registra fecha/hora de Buenos Aires, producto/cantidad, destino físico, precio y responsable declarado. Una entrega a mesa puede quedar pendiente, cobrarse inmediatamente o cargarse a una estadía activa. **Cobrar / transferir** cierra la cuenta completa: cobra los consumos pendientes en la cuenta elegida o crea sus cargos vinculados a la estadía, sin otra salida de stock. Las cortesías e internos exigen motivo y no generan dinero.
+
+**Devolución física** registra sólo las unidades que efectivamente vuelven en condiciones de venta, incluso en una fecha posterior al cierre del día original. Nunca anula dinero ni cargos. **Corregir** compensa íntegramente el importe de un despacho erróneo pendiente mediante un consumo negativo vinculado, conservando el original; no devuelve stock. Si también regresó el producto, registrá la devolución física por separado. No se permite corregir despachos cobrados, transferidos, de estadías con cobros o de días cerrados: la devolución monetaria y regularización de esos casos siguen pendientes. Una corrección parcial de precio requiere revisión; por ahora se corrige el despacho completo y se registra uno nuevo, verificando por separado el movimiento físico.
+
+En **Compras y gastos → Nuevo comprobante**, indicá proveedor, número opcional, concepto, fecha, vencimiento acordado opcional, actividad y Fijo/Variable. **Productos** admite varias líneas con cantidades, costos por unidad y rubros; el total se calcula por línea en centavos y genera una sola deuda. Si ya llegó todo, marcá **Recibido en su totalidad**; si no, usá **Recibir** para las cantidades que efectivamente llegaron. **Servicio** y **Administrativo** registran un importe y nunca ingresan stock. Los productos históricos de “Limpieza y amenities” admiten elegir Limpieza o Amenities en la línea sin cambiar su categoría anterior.
+
+**Pagar** permite pagos parciales con fecha, Efectivo/Banco/Billetera, referencia y responsable. No recibe productos. Total, pagos, saldo y pendiente/parcial/pagado se derivan de los movimientos; no hay casilla de deuda pagada. La lista se ordena por vencimiento, muestra los no definidos al final y distingue vencido, hoy y próximo en los siguientes siete días según la fecha de consulta. Los pagos y recepciones del listado se calculan hasta esa fecha; los formularios validan el saldo y lo pendiente actuales. Los filtros y **Exportar proveedores CSV** comparten el mismo detalle visible y usan el formato de Excel en español.
+
+Cada operación conserva fecha, responsable declarado y detalle en el historial, y guarda juntos sus movimientos con protección de reintentos. El login sigue siendo compartido; usuarios individuales y permisos por módulo se implementarán después de las etapas acordadas. Esta etapa no agrega pagos automáticos, reaperturas, devoluciones de dinero, adjuntos de comprobantes ni valoración/utilidad de stock.
+
 ## Codex en VS Code
 
 Con la extensión de Codex habilitada, abrí este proyecto y pedile tareas concretas. `AGENTS.md` contiene las reglas y `ALCANCE.md` explica qué está implementado y qué falta.
