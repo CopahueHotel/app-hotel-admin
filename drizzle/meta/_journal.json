@@ -57,6 +57,13 @@
       "when": 1791387472904,
       "tag": "0007_serious_peter_parker",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1791389682308,
+      "tag": "0008_brief_sumo",
+      "breakpoints": true
     }
   ]
 }

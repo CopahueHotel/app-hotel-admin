@@ -31,6 +31,7 @@ try {
   assert.ok([303, 307].includes(screen.status));
   assert.equal(screen.headers.get('location'), `${origin}/login`);
   assert.equal((await request('/api/hotel')).status, 401);
+  assert.equal((await request('/api/hotel/personnel')).status, 401);
   assert.ok([303, 307].includes((await request('/?_rsc=smoke', { headers: { RSC: '1' } })).status));
   const loginPage = await request('/login');
   assert.equal(loginPage.status, 200);
@@ -42,6 +43,9 @@ try {
   assert.match(signedIn.headers.get('set-cookie'), /; Secure/);
   const cookie = signedIn.headers.get('set-cookie').split(';')[0];
   assert.equal((await request('/', { headers: { Cookie: cookie } })).status, 200);
+  const staff=await request('/api/hotel/personnel', { headers: { Cookie: cookie } });
+  assert.equal(staff.status,200);
+  assert.ok(Array.isArray((await staff.json()).staff_reports));
   const records = await request('/api/hotel', { headers: { Cookie: cookie } });
   assert.equal(records.status, 200);
   assert.equal((await records.json()).rooms.length, 17);

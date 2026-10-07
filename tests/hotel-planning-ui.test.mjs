@@ -1,0 +1,17 @@
+import assert from 'node:assert/strict';
+import test from 'node:test';
+import React from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { fixture } from './helpers/hotel-fixture.mjs';
+import { loadUi } from './helpers/hotel-ui.mjs';
+test('agenda, monthly menu and staff screens render explicit states, real diners, restrictions and private history',async t=>{
+ const f=await fixture(t),who={responsible:'Gerencia de prueba'},date='2026-10-03';
+ await f.post('supplierProfile',{name:'Proveedor semanal',contact:'Contacto registrado',rubros:['Bebidas'],frequency:'Semanal',schedule:{weekdays:[1],start:'',end:'',interval:null,dates:[]},...who});const s=await f.one('SELECT * FROM suppliers');await f.post('deliveryEdit',{supplier:s.id,date:'',status:'Prevista',observation:'Esperar aviso',...who});
+ await f.post('menuPlan',{date,service:'Cena',dishes:'Plato de prueba',alternatives:'Alternativa manual',conditions:'Confirmar procedimiento con cocina',status:'Confirmado',...who});await f.post('guestProfile',{guest:'demo-1:person:1',version:0,name:'Persona de prueba',restrictions:'Restricción declarada',preferences:'Preferencia registrada',...who});await f.post('mealSuspend',{booking:'demo-1',guests:['demo-1:person:2'],start:date,end:date,service:'Cena',active:true,reason:'Excursión',...who});
+ await f.post('staffEmployee',{name:'Empleado de prueba',role:'Recepción',contact:'Contacto de personal',active:true,...who});const e=await f.one('SELECT * FROM employees');await f.post('staffEvent',{employee:e.id,kind:'Turno',startDate:date,endDate:'2026-10-04',startTime:'22:00',endTime:'06:00',...who});await f.post('staffReport',{employee:e.id,date,type:'Novedad',description:'NOTA INTERNA DE PRUEBA',status:'Pendiente',...who});
+ const data=await(await f.api.GET(new Request('http://localhost/api/hotel',{headers:{Cookie:f.cookie}}))).json(),privateData=await(await f.load('app/api/hotel/personnel/route.ts').GET(new Request('http://localhost/api/hotel/personnel',{headers:{Cookie:f.cookie}}))).json();const ui=loadUi(f,'components/hotel-planning.tsx');
+ const agenda=renderToStaticMarkup(React.createElement(ui.SupplierAgenda,{data,date,onSave:async()=>{},onPurchase:()=>{}}));for(const x of ['Proveedor semanal','A confirmar','Prevista','Generar agenda','Modificar esta entrega','Exportar entregas CSV'])assert.ok(agenda.includes(x),x);
+ const menu=renderToStaticMarkup(React.createElement(ui.MenuPlanner,{data,date,onSave:async()=>{}}));for(const x of ['Plato de prueba','Confirmado','Alternativa manual','Confirmar procedimiento con cocina','Restricción declarada','Copiar día / semana','Exportar menú CSV','Total previsto:'])assert.ok(menu.includes(x),x);
+ const staff=renderToStaticMarkup(React.createElement(ui.StaffPlanner,{data:privateData,date,onSave:async()=>{}}));for(const x of ['Empleado de prueba','2026-10-04T06:00','Sin registrar','NOTA INTERNA DE PRUEBA','Pendiente','Exportar novedades CSV','Registrar asistencia','Historial de modificaciones'])assert.ok(staff.includes(x),x);
+ const kitchen=renderToStaticMarkup(React.createElement(loadUi(f,'components/hotel-meals.tsx').Kitchen,{data,date,onSave:async()=>{}}));assert.ok(kitchen.includes('Plato de prueba'));assert.ok(kitchen.includes('Restricción declarada'));assert.ok(!kitchen.includes('NOTA INTERNA'));assert.ok(!menu.includes('NOTA INTERNA'));assert.ok(!agenda.includes('NOTA INTERNA'));assert.ok(!agenda.includes('?')&&!menu.includes('?')&&!staff.includes('?'));
+});

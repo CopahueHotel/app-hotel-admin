@@ -21,9 +21,11 @@ export async function fixture(t, beforeMigration) {
   const migrations = readdirSync('drizzle').filter(f => f.endsWith('.sql')).sort();
   for (const file of migrations) {
     if (file.startsWith('0002') && beforeMigration) await beforeMigration(raw);
-    for (const sql of readFileSync(`drizzle/${file}`, 'utf8').split('--> statement-breakpoint')) {
-      if (sql.trim()) await raw.prepare(sql).run();
-    }
+    // One real D1 batch per migration avoids hundreds of loopback connections
+    // per fixture and Windows ephemeral-port exhaustion in the full suite.
+    const statements=readFileSync(`drizzle/${file}`, 'utf8').split('--> statement-breakpoint')
+      .filter(sql=>sql.trim()).map(sql=>raw.prepare(sql));
+    if(statements.length)await raw.batch(statements);
   }
   let gate;
   const db = {

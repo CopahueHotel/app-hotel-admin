@@ -58,3 +58,48 @@
  .supply-filters { padding: 16px; }
  .supply-table th, .supply-table td { padding: 12px; }
 }
+.planning-panel { margin-bottom: 24px; }
+.planning-editor { margin: 0 20px 20px; padding: 20px; border: 1px solid var(--border); border-radius: 10px; }
+.planning-editor fieldset { border: 0; padding: 0; min-width: 0; }
+.planning-editor h3 { margin-bottom: 18px; font-size: 16px; }
+.planning-text { grid-column: 1 / -1; }
+.planning-text textarea { font: inherit; height: auto; min-height: 90px; width: 100%; resize: vertical; }
+.planning-editor select[multiple] { min-height: 130px; }
+.planning-editor .form-note { grid-column: 1 / -1; }
+.planning-filters { display: flex; flex-wrap: wrap; align-items: end; gap: 14px; padding: 18px 20px; }
+.planning-filters .field { flex: 1 1 160px; min-width: 0; }
+.planning-entities, .planning-reports { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(280px,100%),1fr)); gap: 16px; padding: 20px; }
+.planning-entities article, .planning-reports article { padding: 18px; border: 1px solid var(--border); border-radius: 10px; min-width: 0; overflow-wrap: anywhere; }
+.planning-entities h3 { font-size: 16px; }
+.planning-entities p, .planning-reports p { margin: 8px 0; }
+.planning-reports small { display: block; margin-top: 8px; color: var(--muted-foreground); }
+.planning-calendar { padding: 20px; }
+.planning-calendar h3 { font-size: 16px; margin-bottom: 16px; text-transform: capitalize; }
+.planning-days { display: grid; grid-template-columns: repeat(7,minmax(0,1fr)); gap: 6px; }
+.planning-days > strong { text-align: center; font-size: 13px; }
+.planning-days button { min-width: 0; min-height: 80px; padding: 8px; background: var(--card); color: var(--foreground); text-align: left; border: 1px solid var(--border); border-radius: 6px; }
+.planning-days button.selected { border: 2px solid var(--primary); background: #eaf5f6; }
+.planning-days button span { display: block; font-size: 12px; overflow-wrap: anywhere; margin-top: 5px; }
+.planning-subheading { font-size: 16px; padding: 20px; }
+.planning-daily, .menu-summary { padding: 20px; font-size: 14px; line-height: 1.6; }
+.planning-daily .menu-summary { padding: 16px 0; }
+.menu-summary p { margin: 6px 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.planning-count { font-weight: 600; margin: 16px 0; }
+.planning-condition { padding: 12px 0; border-top: 1px solid var(--border); }
+.planning-note { padding: 0 20px; font-size: 14px; color: var(--muted-foreground); }
+.planning-history { padding: 20px; font-size: 14px; }
+.planning-history > div { padding: 14px 0; border-bottom: 1px solid var(--border); }
+.planning-history summary { cursor: pointer; }
+.planning-history p { margin: 6px 0; }
+.planning-history-fields { margin: 10px 0; }
+.planning-history-fields > div { display: grid; grid-template-columns: minmax(100px, 1fr) minmax(0, 2fr); gap: 10px; padding: 4px 0; }
+.planning-history-fields dt { color: var(--muted-foreground); }
+.planning-history-fields dd { margin: 0; overflow-wrap: anywhere; white-space: pre-wrap; }
+@media (max-width: 767px) {
+ .planning-editor { margin: 0 12px 16px; padding: 16px; }
+ .planning-calendar { padding: 12px; }
+ .planning-days { gap: 3px; }
+ .planning-days button { min-height: 68px; padding: 5px; }
+ .planning-days button span { font-size: 10px; }
+ .planning-filters, .planning-entities, .planning-reports, .planning-daily { padding: 16px; }
+}

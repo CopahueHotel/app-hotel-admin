@@ -9,6 +9,10 @@ export type Rate = typeof schema.rates.$inferSelect;
 export type BookingTerms = typeof schema.bookingTerms.$inferSelect;
 export type RoomBlock = typeof schema.roomBlocks.$inferSelect;
 export type HotelTables = {
+  suppliers: typeof schema.suppliers.$inferSelect;
+  supplier_deliveries: typeof schema.deliveries.$inferSelect;
+  menu_plans: typeof schema.menuPlans.$inferSelect;
+  menu_actuals: typeof schema.menuActuals.$inferSelect;
   beverage_accounts: typeof schema.beverageAccounts.$inferSelect;
   beverage_dispatches: typeof schema.beverageDispatches.$inferSelect;
   beverage_settlements: typeof schema.beverageSettlements.$inferSelect;
@@ -39,3 +43,5 @@ export type HotelTables = {
   room_blocks: RoomBlock;
 };
 export type HotelData = { [Table in keyof HotelTables]: HotelTables[Table][] };
+export type PersonnelTables={employees:typeof schema.employees.$inferSelect;staff_events:typeof schema.staffEvents.$inferSelect;staff_reports:typeof schema.staffReports.$inferSelect};
+export type PersonnelData={ [Table in keyof PersonnelTables]:PersonnelTables[Table][] } & {audit_log:HotelTables['audit_log'][]};
