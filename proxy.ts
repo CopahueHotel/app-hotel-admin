@@ -3,9 +3,10 @@ import { requireSession, loginLocation } from '@/lib/hotel-auth';
 
 export async function proxy(request: Request) {
   const pathname = new URL(request.url).pathname;
-  if (pathname === '/login' || pathname === '/api/auth/login' || pathname === '/api/auth/logout') {
+  if (['/login', '/recuperar', '/api/auth/login', '/api/auth/logout', '/api/auth/recovery/request', '/api/auth/recovery/confirm'].includes(pathname)) {
     const response = NextResponse.next();
     response.headers.set('Cache-Control', 'no-store');
+    if (pathname === '/recuperar') response.headers.set('Referrer-Policy', 'no-referrer');
     return response;
   }
   const rejected = await requireSession(request);

@@ -37,6 +37,14 @@ try {
   const loginPage = await request('/login');
   assert.equal(loginPage.status, 200);
   assert.match(await loginPage.text(), /Ingresar/);
+  const recoveryPage = await request('/recuperar');
+  assert.equal(recoveryPage.status, 200);
+  assert.equal(recoveryPage.headers.get('referrer-policy'), 'no-referrer');
+  assert.match(await recoveryPage.text(), /Recuperar acceso/);
+  const recoveryWithoutMail = await request('/api/auth/recovery/request', {
+    method: 'POST', headers: { 'Content-Type': 'application/json', Origin: origin }, body: JSON.stringify({ email: 'smoke@example.test' }),
+  });
+  assert.equal(recoveryWithoutMail.status, 503);
   const signedIn = await request('/api/auth/login', {
     method: 'POST', headers: { 'Content-Type': 'application/json', Origin: origin }, body: JSON.stringify({ email:'smoke@example.test',password }),
   });
@@ -55,6 +63,16 @@ try {
   })).status, 403);
   assert.equal((await request('/api/auth/logout', { method: 'POST', headers: { Cookie: cookie, Origin: origin } })).status, 200);
   assert.equal((await request('/api/hotel', { headers: { Cookie: cookie } })).status, 401);
+  const recoveryToken = '12'.repeat(32);
+  const tokenHash = Buffer.from(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(recoveryToken))).toString('hex');
+  await db.prepare('INSERT INTO password_resets (token_hash,user_id,user_version,expires) VALUES (?,?,0,?)').bind(tokenHash, 'smoke-admin', Math.floor(Date.now() / 1000) + 900).run();
+  const recover = () => request('/api/auth/recovery/confirm', {
+    method: 'POST', headers: { 'Content-Type': 'application/json', Origin: origin }, body: JSON.stringify({ token: recoveryToken, password: 'http-smoke-new-password' }),
+  });
+  const recovered = await recover();
+  assert.equal(recovered.status, 200);
+  assert.match(recovered.headers.get('set-cookie'), /; Secure/);
+  assert.equal((await recover()).status, 400);
   console.log('HTTP compilado: pantalla y RSC protegidos, login, API autenticada, origen cruzado y logout verificados.');
 } finally {
   await mf.dispose();

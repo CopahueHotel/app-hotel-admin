@@ -71,6 +71,13 @@
       "when": 1791393941569,
       "tag": "0009_rapid_fallen_one",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1791481829160,
+      "tag": "0010_perfect_mandarin",
+      "breakpoints": true
     }
   ]
 }

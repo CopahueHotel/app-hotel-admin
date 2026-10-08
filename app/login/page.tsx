@@ -35,6 +35,6 @@ export default function LoginPage() {
       {error && <p className="login-error" role="alert">{error}</p>}
       <Button type="submit" disabled={busy}>{busy ? <Loader2 size={16} className="spin"/> : <LockKeyhole size={16}/>} {busy ? 'Ingresando…' : 'Ingresar'}</Button>
     </form>
-    <small className="muted">Solicitá la contraseña al responsable del hotel.</small>
+    <a href="/recuperar">Olvidé mi contraseña</a>
   </section></main>;
 }

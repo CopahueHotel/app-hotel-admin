@@ -8,7 +8,7 @@ const lifetime = 8 * 60 * 60;
 const hex = (bytes: Uint8Array) => Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('');
 const now = () => Math.floor(Date.now() / 1000);
 
-function configuration() {
+export function configuration() {
   const origin = env.AUTH_ORIGIN;
   if (!origin) {
     throw new Error('AUTH_NOT_CONFIGURED');

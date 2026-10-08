@@ -180,6 +180,8 @@ Los siguientes cambios se suben con `git add .`, `git commit -m "Descripcion del
 
 ## Usuarios, permisos y organización modular · HOT-15 a HOT-19
 
+La recuperación local y el circuito preparado para correo se explican en [Recuperación de acceso](docs/recuperacion-acceso.md). Incluye un comando privado para recuperar una cuenta local sin correo; el envío público queda deshabilitado hasta configurar el proveedor.
+
 La migración `0009_rapid_fallen_one` agrega cuentas individuales, roles, controles de acceso y referencias de usuario en sesiones, operaciones e historial. Conserva los registros anteriores: los responsables históricos no se reconstruyen. Las sesiones del acceso compartido anterior dejan de ser válidas; `AUTH_PASSWORD_HASH` ya no habilita ningún ingreso. Se mantiene el origen HTTPS y las cookies de sesión HttpOnly, SameSite y Secure cuando corresponde, con duración de ocho horas y revocación al salir. Las contraseñas individuales usan PBKDF2-HMAC-SHA256 con sal aleatoria y 600.000 iteraciones; nunca se devuelven hashes al navegador ni se guardan contraseñas en el historial. Se conserva el límite global de 20 intentos cada 15 minutos. Referencia técnica: [almacenamiento de contraseñas OWASP](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html).
 
 **Primer superadministrador en una copia existente:** detené el servidor, respaldá `.wrangler/state/` y `.dev.vars`, conservá el `AUTH_ORIGIN` actual y ejecutá desde la raíz:
@@ -215,7 +217,7 @@ La sesión se verifica contra el usuario activo y los permisos vigentes en cada 
 
 **Código:** `modules/` agrupa pantallas, formularios, validaciones y operaciones de reservas, habitaciones, tarifas, comidas, restaurante/bebidas, stock, compras, proveedores, menú, caja, personal, informes y acceso. `app/page.tsx` conserva la coordinación del espacio de trabajo; las rutas delegan las reglas en funciones de módulo. Los archivos anteriores de `lib/hotel-*` y `components/hotel-*` conservan exportaciones compatibles. Autenticación, tipos, persistencia, formatos, componentes visuales, fechas y el contexto transaccional se comparten. Una operación de bebida/compra/reserva sigue reuniendo todos sus movimientos e historial en un solo batch; separar archivos no separa la transacción.
 
-Pendientes dentro de la operación futura: revisión interactiva con el gerente de la matriz inicial y pantallas, recuperación extraordinaria de todas las credenciales por un administrador del servidor, recuperación por email, MFA y expiración obligatoria de contraseñas temporales. No se agregan reaperturas de cierres, aprobaciones por etapas, roles de facturación ni circuitos financieros nuevos para completar la matriz. Si se agregan operaciones nuevas deben registrarse expresamente en el catálogo y validar sus datos de salida; la ausencia de permiso se deniega.
+Pendientes dentro de la operación futura: revisión interactiva con el gerente de la matriz inicial y pantallas, configuración y prueba de entrega real del correo de recuperación, recuperación extraordinaria en producción por un administrador del servidor, MFA y expiración obligatoria de contraseñas temporales. No se agregan reaperturas de cierres, aprobaciones por etapas, roles de facturación ni circuitos financieros nuevos para completar la matriz. Si se agregan operaciones nuevas deben registrarse expresamente en el catálogo y validar sus datos de salida; la ausencia de permiso se deniega.
 
 ## Persistencia y respaldo local
 
