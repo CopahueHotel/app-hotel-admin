@@ -1,0 +1,29 @@
+[Unit]
+Description=Hotel Copahue - entorno de pruebas
+After=network-online.target
+Wants=network-online.target
+StartLimitIntervalSec=60
+StartLimitBurst=5
+
+[Service]
+Type=simple
+User=hotel-pruebas
+Group=hotel-pruebas
+WorkingDirectory=/opt/hotel-pruebas
+ExecStart=/usr/bin/node /opt/hotel-pruebas/scripts/start-local.mjs
+Environment=NODE_ENV=production
+Environment=HOTEL_PORT=8788
+Environment=CI=true
+Environment=WRANGLER_SEND_METRICS=false
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=30
+KillMode=control-group
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=full
+
+[Install]
+WantedBy=multi-user.target

@@ -17,7 +17,7 @@ const mf = new Miniflare({
       .map(f => ({ type: 'ESModule', path: resolve('dist/server', f) })),
   ],
   compatibilityDate: '2026-05-15', compatibilityFlags: ['nodejs_compat'],
-  d1Databases: ['DB'], bindings: { AUTH_ORIGIN: origin, AUTH_PASSWORD_HASH: passwordHash },
+  d1Databases: ['DB'], bindings: { AUTH_ORIGIN: origin, AUTH_PASSWORD_HASH: passwordHash, APP_ENV: 'test' },
 });
 try {
   const db = await mf.getD1Database('DB');
@@ -36,7 +36,10 @@ try {
   assert.ok([303, 307].includes((await request('/?_rsc=smoke', { headers: { RSC: '1' } })).status));
   const loginPage = await request('/login');
   assert.equal(loginPage.status, 200);
-  assert.match(await loginPage.text(), /Ingresar/);
+  const loginHtml = await loginPage.text();
+  assert.match(loginHtml, /Ingresar/);
+  assert.match(loginHtml, /PRUEBAS/);
+  assert.match(loginHtml, /No cargar datos reales del hotel/);
   const recoveryPage = await request('/recuperar');
   assert.equal(recoveryPage.status, 200);
   assert.equal(recoveryPage.headers.get('referrer-policy'), 'no-referrer');

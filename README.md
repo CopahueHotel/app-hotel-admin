@@ -248,7 +248,9 @@ Reemplazá la URL por el dominio real, sin ruta ni barra final. El origen queda 
 
 El servidor escucha solamente en `127.0.0.1:8787`. Configurá un proxy inverso con HTTPS para el dominio, que envíe las solicitudes a `http://127.0.0.1:8787` y conserve `Host`. No expongas Vite de desarrollo a Internet. El despliegue debe mantener el proceso activo y la carpeta `.wrangler/state/` entre reinicios y actualizaciones.
 
-La instalación de prueba en InterServer está documentada en [deploy/VPS.md](deploy/VPS.md). Se accede por HTTPS a la IP, con login y una base independiente. Los cambios de GitHub no se publican automáticamente.
+La instalación en InterServer está documentada en [deploy/VPS.md](deploy/VPS.md). Administración se accede por HTTPS en `admin.copahuehotel.com.ar`; el acceso anterior por IP redirige allí. Los cambios de GitHub no se publican automáticamente.
+
+La separación entre `admin.copahuehotel.com.ar` y `pruebas.copahuehotel.com.ar`, con bases y cuentas independientes, se documenta en [Entornos](docs/entornos.md). Ambos accesos están configurados con HTTPS; la web y el correo actuales conservan sus registros.
 
 Para cambiar una contraseña individual, usá **Usuarios y permisos → Restablecer acceso** con un superadministrador; las sesiones anteriores de esa cuenta se invalidan automáticamente. Conservá `.dev.vars` y su origen. HTTP solo se admite para pruebas en localhost; en un dominio público el acceso exige configurar HTTPS.
 

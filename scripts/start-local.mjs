@@ -6,8 +6,10 @@ import { fileURLToPath } from 'node:url';
 const vars = fileURLToPath(new URL('../.dev.vars', import.meta.url));
 if (!existsSync(vars)) throw Error('Configurá el acceso primero con npm run auth:setup -- https://TU-DOMINIO.');
 const cli = new URL('../node_modules/wrangler/bin/wrangler.js', import.meta.url);
+const port = process.env.HOTEL_PORT ?? '8787';
+if (!/^\d{1,5}$/.test(port) || Number(port) < 1 || Number(port) > 65535) throw Error('HOTEL_PORT debe ser un puerto entre 1 y 65535.');
 // Wrangler's CommonJS launcher only runs when executed as the main module.
-const child = spawn(process.execPath, [fileURLToPath(cli), 'dev', '--config', 'dist/server/wrangler.json', '--local', '--persist-to', '.wrangler/state', '--ip', '127.0.0.1', '--port', '8787', '--inspector-port', '0', '--env-file', vars], { stdio: 'inherit' });
+const child = spawn(process.execPath, [fileURLToPath(cli), 'dev', '--config', 'dist/server/wrangler.json', '--local', '--persist-to', '.wrangler/state', '--ip', '127.0.0.1', '--port', port, '--inspector-port', '0', '--env-file', vars], { stdio: 'inherit' });
 for (const signal of ['SIGINT', 'SIGTERM']) process.on(signal, () => child.kill(signal));
 child.on('error', error => { console.error(error); process.exitCode = 1; });
 child.on('exit', (code, signal) => { process.exitCode = code ?? (signal === 'SIGINT' || signal === 'SIGTERM' ? 0 : 1); });

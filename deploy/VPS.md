@@ -1,12 +1,14 @@
 # VPS de prueba · InterServer
 
-Instalación del 6 de octubre de 2026. Dirección: **https://162.35.114.196**.
+Instalación del 6 de octubre de 2026. Accesos actuales: **https://admin.copahuehotel.com.ar** y **https://pruebas.copahuehotel.com.ar**. El acceso anterior por IP redirige a Administración.
 
 Ubuntu 24.04, Node.js 22, Nginx y Certbot. La app corre con el usuario de sistema `hotel-admin`, sin permisos de root, en `/opt/hotel-admin`. El servicio `hotel-admin` arranca al iniciar el VPS. Nginx publica HTTPS y reenvía al servidor interno `127.0.0.1:8787`. El firewall permite los puertos TCP 22, 80 y 443.
 
-El certificado de Let's Encrypt corresponde a la IP y usa el perfil `shortlived`. Certbot lo renueva automáticamente y el hook `/etc/letsencrypt/renewal-hooks/deploy/reload-nginx` recarga Nginx. El puerto 80 mantiene disponible la validación ACME y redirige las visitas a HTTPS.
+Los subdominios usan el certificado Let's Encrypt `hotel-admin-dominios`, renovado automáticamente por Certbot. Se conserva el certificado de la IP con perfil `shortlived` para la redirección de enlaces anteriores. El hook `/etc/letsencrypt/renewal-hooks/deploy/reload-nginx` recarga Nginx. El puerto 80 mantiene disponible la validación ACME y redirige las visitas a HTTPS.
 
 ## Acceso y datos
+
+Se instaló un entorno separado en `/opt/hotel-pruebas`, con servicio `hotel-pruebas`, usuario de sistema propio y puerto interno `127.0.0.1:8788`. Tiene una base y usuarios nuevos, sin copiar registros de Administración. Ambos subdominios están activos con HTTPS. Ver [Entornos](../docs/entornos.md) y los templates de esta carpeta. Administración conserva el código de `814b648`; Pruebas incorpora además la identificación del entorno y el puerto configurable, versionados junto con estos templates.
 
 HOT-15–19 reemplaza la contraseña compartida por cuentas individuales con roles y permisos. `.dev.vars` conserva el origen de acceso y tiene permisos 600. Los usuarios y contraseñas de la PC no se transfieren al VPS.
 
