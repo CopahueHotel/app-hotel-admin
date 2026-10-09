@@ -1,4 +1,5 @@
 import type { Booking,HotelData } from '@/lib/hotel-types';
+import { regimeIncludesService } from '@/modules/shared/regimes';
 export const services=['Desayuno','Almuerzo','Cena'] as const;
 export type Service=typeof services[number];
 export const hotelDate=(now=new Date())=>new Intl.DateTimeFormat('en-CA',{timeZone:'America/Argentina/Buenos_Aires',year:'numeric',month:'2-digit',day:'2-digit'}).format(now);
@@ -9,7 +10,7 @@ export function departureText(b:Booking,date:string){
  return nights<0?'Salida pendiente de registrar':nights===0?'Sale hoy':nights===1?'Sale mañana':`Quedan ${nights} noches`;
 }
 export function mealIncluded(b:Booking,date:string,service:string,overrides:HotelData['meal_overrides']){
- return b.start<=date&&date<b.end&&(service==='Desayuno'||b.regime==='PC'||b.regime==='MP'&&service===(overrides.find(m=>m.booking===b.id&&m.date===date)?.meal||b.meal));
+ return b.start<=date&&date<b.end&&regimeIncludesService(b.regime,service,overrides.find(m=>m.booking===b.id&&m.date===date)?.meal||b.meal);
 }
 export type KitchenRow={key:string;booking:string|null;guest:string|null;plan:string|null;room:string;name:string;qty:number;regime:string;character:string;restrictions:string;preferences:string;observation:string;reason:string;state:string;expected:number;external:boolean;version:number};
 export function kitchenRows(data:HotelData,date:string,service:Service):KitchenRow[]{

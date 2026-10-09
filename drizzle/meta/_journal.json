@@ -78,6 +78,13 @@
       "when": 1791481829160,
       "tag": "0010_perfect_mandarin",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "6",
+      "when": 1791563272801,
+      "tag": "0011_current_hotel_regimes",
+      "breakpoints": true
     }
   ]
 }

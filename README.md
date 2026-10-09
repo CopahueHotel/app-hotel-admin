@@ -1,6 +1,6 @@
 # Hotel · Administración — proyecto local
 
-Aplicación de administración del hotel de 17 habitaciones y restaurante, regímenes Desayuno/MP/PC, caja compartida y stock.
+Aplicación de administración del hotel de 17 habitaciones y restaurante, regímenes Sin desayuno/Desayuno/Media pensión, caja compartida y stock.
 
 ## Requisitos
 
@@ -65,7 +65,9 @@ Los importes muestran centavos. Las exportaciones respetan los filtros de Caja, 
 
 Aplicá `npm.cmd run db:local` antes de abrir esta versión. Se agrega la migración `0005_reservation_stage_one`; conserva los importes acordados y los cobros existentes, identificando el precio anterior como histórico, sin inventar tarifas ni reconstruir precios nocturnos.
 
-En **Tarifas**, cargá las seis combinaciones de Single/Doble y Desayuno/MP/PC que correspondan. La unidad es **ARS por habitación y noche**. Las fechas desde/hasta de una tarifa son inclusivas; no se permiten vigencias superpuestas para la misma combinación. Una tarifa de cero sólo debe cargarse si ése es el precio decidido: no se crean tarifas de ejemplo.
+En **Tarifas**, cargá las seis combinaciones de Single/Doble y Sin desayuno/Desayuno/Media pensión que correspondan. La unidad es **ARS por habitación y noche**. Las fechas desde/hasta de una tarifa son inclusivas; no se permiten vigencias superpuestas para la misma combinación. Una tarifa de cero sólo debe cargarse si ése es el precio decidido: no se crean tarifas de ejemplo.
+
+Aplicar la migración `0011_current_hotel_regimes` antes de usar Sin desayuno. Este régimen no incluye comidas; se pueden confirmar adicionales expresamente. Desayuno incluye solamente desayuno y MP incluye desayuno más almuerzo o cena según la elección vigente. Pensión completa queda disponible únicamente para conservar registros históricos; la migración no convierte reservas ni recalcula precios acordados.
 
 Desde **Reservas o Calendario → Consultar tarifas** podés consultar la fecha elegida. La carga de reservas también muestra ese cuadro y el detalle de cada noche, con llegada incluida y salida excluida. El servidor vuelve a validar la cotización; si los precios cambiaron, hay que actualizar los registros y revisar antes de guardar. Las tarifas guardadas dentro de una reserva no cambian al editar el tarifario.
 

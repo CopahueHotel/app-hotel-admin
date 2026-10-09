@@ -41,6 +41,7 @@ export async function planReservation(db:D1Database,action:string,input:unknown,
  const key=op.action==='bookingEdit'?op.data.id:crypto.randomUUID();
  const old=op.action==='bookingEdit'?await db.prepare('SELECT * FROM bookings WHERE id=?').bind(key).first<Booking>():null;
  if(op.action==='bookingEdit'&&(!old||!['Confirmada','Alojado'].includes(old.status)))throw Error('Solo se pueden editar reservas confirmadas o en curso.');
+ if(bookingData.regime==='PC'&&old?.regime!=='PC')throw Error('Pensión completa solo se conserva para reservas históricas.');
  const stored=old?await db.prepare('SELECT * FROM booking_terms WHERE booking=?').bind(key).first<BookingTerms>():null;
  const previous=stored??(old?{booking:key,base_amount:old.amount,tariff_total:null,discount_amount:0,discount_type:'Ninguno',discount_value:0,price_mode:'Historico',snapshot:'[]',payment_condition:'Sin especificar',benefit:'Habitual',reason:'',responsible:'',observation:'',barter_agreement:'',barter_status:'No corresponde',version:0}:null);
  if(op.action==='bookingEdit'&&previous?.version!==op.data.version)throw Error('HOT_VERSION');

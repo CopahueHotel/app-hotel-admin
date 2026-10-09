@@ -2,6 +2,7 @@ import type { BookingTerms } from '@/lib/hotel-types';
 import { exactMoney,validDate } from '@/modules/shared/validation';
 import { quoteStay } from '@/modules/tariffs/domain';
 import { z } from 'zod';
+import { supportedRegimes } from '@/modules/shared/regimes';
 export { reservationNights } from '@/modules/shared/nights';
 export { exactMoney,validDate } from '@/modules/shared/validation';
 export { quoteStay,rateSchema } from '@/modules/tariffs/domain';
@@ -19,7 +20,7 @@ const economics={
 };
 export const bookingSchema=z.object({
  guest:text,phone:z.string().max(80).default(''),room:z.coerce.number().int(),start:validDate,end:validDate,
- pax:z.coerce.number().int().min(1).max(2),regime:z.enum(['Desayuno','MP','PC']),meal:z.enum(['Cena','Almuerzo']),
+ pax:z.coerce.number().int().min(1).max(2),regime:z.enum(supportedRegimes),meal:z.enum(['Cena','Almuerzo']),
  source:text,note,...economics,
 });
 export const bookingEditSchema=bookingSchema.extend({id:text,version:z.coerce.number().int().nonnegative()});

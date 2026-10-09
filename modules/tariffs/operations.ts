@@ -7,9 +7,11 @@ export async function planRate(db:D1Database,d:typeof rateSchema._output,add:(sq
   if(d.id){
    const old=await db.prepare('SELECT * FROM room_rates WHERE id=?').bind(d.id).first<Rate>();
    if(!old)throw Error('Tarifa inexistente.');
+   if(d.regime==='PC'&&old.regime!=='PC')throw Error('Pensión completa solo se conserva para tarifas históricas.');
    add('UPDATE room_rates SET type=?,regime=?,start=?,end=?,amount=?,responsible=?,note=?,version=? WHERE id=?',d.type,d.regime,d.start,d.end,Math.round(d.amount*100),d.responsible,d.note,d.version+1,d.id);
    return {before:old};
   }
+  if(d.regime==='PC')throw Error('Elegí Sin desayuno, Desayuno o Media pensión.');
   add('INSERT INTO room_rates (id,type,regime,start,end,amount,responsible,note) VALUES (?,?,?,?,?,?,?,?)',crypto.randomUUID(),d.type,d.regime,d.start,d.end,Math.round(d.amount*100),d.responsible,d.note);
   return {};
 

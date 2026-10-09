@@ -2,8 +2,9 @@ import type { Rate } from '@/lib/hotel-types';
 import { reservationNights } from '@/modules/shared/nights';
 import { exactMoney,validDate } from '@/modules/shared/validation';
 import { z } from 'zod';
+import { supportedRegimes } from '@/modules/shared/regimes';
 const text=z.string().trim().min(1).max(240),note=z.string().trim().max(1000).default('');
-export const rateSchema=z.object({id:z.string().default(''),version:z.coerce.number().int().nonnegative().default(0),type:z.enum(['Single','Doble']),regime:z.enum(['Desayuno','MP','PC']),start:validDate,end:validDate,amount:exactMoney,responsible:text,note});
+export const rateSchema=z.object({id:z.string().default(''),version:z.coerce.number().int().nonnegative().default(0),type:z.enum(['Single','Doble']),regime:z.enum(supportedRegimes),start:validDate,end:validDate,amount:exactMoney,responsible:text,note});
 export function quoteStay(rates:Rate[],type:string,regime:string,start:string,end:string) {
  const nights=reservationNights(start,end).map(date=>{
   const found=rates.filter(r=>r.type===type&&r.regime===regime&&r.start<=date&&date<=r.end);
