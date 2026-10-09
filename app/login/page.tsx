@@ -28,7 +28,7 @@ export default function LoginPage() {
   }
   return <main className="login-screen"><section className="panel login-card">
     <div className="brand-icon"><Hotel size={28}/></div>
-    <div><div className="eyebrow">HOTEL COPAHUE</div><h1>Ingresar</h1><p className="muted">Acceso privado a la administración de prueba.</p></div>
+    <div><div className="eyebrow">HOTEL COPAHUE</div><h1>Ingresar</h1><p className="muted">Acceso privado a la administración del hotel.</p></div>
     <form onSubmit={submit}>
       <label className="field"><span>Email</span><Input name="email" type="email" autoComplete="username" required maxLength={240} disabled={busy}/></label>
       <label className="field"><span>Contraseña</span><Input name="password" type="password" autoComplete="current-password" required maxLength={256} disabled={busy}/></label>

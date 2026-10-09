@@ -1,6 +1,6 @@
 # Hotel · Administración — proyecto local
 
-Código completo de la primera versión de prueba: hotel de 17 habitaciones y restaurante, regímenes Desayuno/MP/PC, caja compartida y stock.
+Aplicación de administración del hotel de 17 habitaciones y restaurante, regímenes Desayuno/MP/PC, caja compartida y stock.
 
 ## Requisitos
 
@@ -29,7 +29,7 @@ npm.cmd run dev
 
 `npm.cmd` evita el bloqueo de `npm.ps1` por PowerShell sin cambiar la política de ejecución. En macOS/Linux usá `npm` en lugar de `npm.cmd`.
 
-La primera consulta crea los datos ficticios de ejemplo. **La base local es independiente de la versión online**: no descarga ni sincroniza sus registros.
+La primera consulta prepara las habitaciones y la configuración básica, sin reservas, productos, stock ni dinero ficticios. Los ejemplos se generan únicamente con `APP_ENV=test`, para una base independiente de Pruebas. **La base local es independiente de la versión online**: no descarga ni sincroniza sus registros.
 
 ## Próximas ejecuciones y cambios
 

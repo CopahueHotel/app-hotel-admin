@@ -45,7 +45,7 @@ export async function fixture(t, beforeMigration) {
       return raw.batch(statements.map(s => s.statement));
     },
   };
-  const authEnv = { AUTH_ORIGIN: 'http://localhost', AUTH_PASSWORD_HASH: passwordHash };
+  const authEnv = { AUTH_ORIGIN: 'http://localhost', AUTH_PASSWORD_HASH: passwordHash, APP_ENV: 'test', MAIL_TEST_RECIPIENTS: 'admin@example.test' };
   const modules = new Map();
   const errors = [];
   const background = [];

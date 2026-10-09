@@ -1,3 +1,4 @@
+import { env } from 'cloudflare:workers';
 import { accessGuard,checkOrigin,sessionIdentity } from '@/lib/hotel-auth';
 import { database } from '@/lib/hotel-db';
 import { mealOperations,planMeals } from '@/lib/hotel-meal-api';
@@ -38,7 +39,7 @@ export async function GET(req:Request){
  const identity=await sessionIdentity(req);if(identity instanceof Response)return identity;
  const exportModule=new URL(req.url).searchParams.get('export');
  if(exportModule&&!can(identity,exportModule+'.export'))return Response.json({error:'No tenés permiso para exportar.'},{status:403});
- try{const db=database();await seed(db);return Response.json(await readHotelData(db,identity),{headers:{'Cache-Control':'no-store'}});}
+ try{const db=database();await seed(db,env.APP_ENV==='test');return Response.json(await readHotelData(db,identity),{headers:{'Cache-Control':'no-store'}});}
  catch(e){console.error(e);return Response.json({error:'No se pudieron cargar los registros. Actualizá e intentá nuevamente.'},{status:e instanceof Error&&e.message.includes('HOT_ACCESS_CHANGED')?403:503});}
 }
 export async function POST(req:Request){
@@ -46,7 +47,7 @@ const identity=await sessionIdentity(req);if(identity instanceof Response)return
 let requestKey:string|undefined, fingerprint:string|undefined, requestDb:D1Database|undefined;
 try{const raw=await req.json() as {action:string;data:Record<string,unknown>};
 const {action,data:d}=operationSchema.parse({action:raw.action,data:{...raw.data,responsible:identity.name}});
-await authorizeOperation(database(),identity,action,d as Record<string,unknown>);const db=database();requestDb=db;await seed(db);
+await authorizeOperation(database(),identity,action,d as Record<string,unknown>);const db=database();requestDb=db;await seed(db,env.APP_ENV==='test');
 requestKey=z.string().uuid().parse(req.headers.get('Idempotency-Key'));
 fingerprint=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(JSON.stringify({user:identity.id,action:action,data:d}))))).map(v=>v.toString(16).padStart(2,'0')).join('');
 const previous=await db.prepare('SELECT fingerprint FROM operation_requests WHERE key=?').bind(requestKey).first<{fingerprint:string}>();
