@@ -1,4 +1,4 @@
-import { env } from 'cloudflare:workers';
+import { env, waitUntil } from 'cloudflare:workers';
 import { database } from '@/lib/hotel-db';
 import { authError, checkOrigin, configuration } from '@/lib/hotel-auth';
 import { completeRecovery, prepareRecovery, recoveryAttempt, recoveryMessage } from '@/modules/access/recovery';
@@ -37,20 +37,20 @@ export async function requestRecovery(request: Request) {
     if (!sender) return authError(503, 'El envío de correo todavía no está configurado. Consultá al administrador para recuperar el acceso.');
     const db = database(), timestamp = Math.floor(Date.now() / 1000), email = body.email.trim().toLowerCase();
     await recoveryAttempt(db, 'request', email, timestamp);
-    // Same minimum response time for existing, missing and inactive accounts.
-    // Mail delivery is bounded below that delay and never reveals its outcome.
+    // Mail delivery runs outside the response: its latency cannot reveal users.
     const delay = new Promise(resolve => setTimeout(resolve, 2000));
-    const work = (async () => {
-      const prepared = await prepareRecovery(db, email, configuration().origin, timestamp);
-      if (prepared) {
-        try { await sender(prepared.mail); }
-        catch {
-          await db.prepare('DELETE FROM password_resets WHERE token_hash=?').bind(prepared.tokenHash).run();
-          console.error('RECOVERY_MAIL_DELIVERY_FAILED');
-        }
+    waitUntil((async () => {
+      let tokenHash: string | undefined;
+      let phase = 'prepare';
+      try {
+        const prepared = await prepareRecovery(db, email, configuration().origin, timestamp);
+        if (prepared) { tokenHash = prepared.tokenHash; phase = 'delivery'; await sender(prepared.mail); }
+      } catch (error) {
+        if (tokenHash) { try { await db.prepare('DELETE FROM password_resets WHERE token_hash=?').bind(tokenHash).run(); } catch { /* Token still expires. */ } }
+        console.error('RECOVERY_MAIL_DELIVERY_FAILED', phase, error instanceof Error ? error.name : 'Error');
       }
-    })();
-    await Promise.all([delay, work]);
+    })());
+    await delay;
     return Response.json({ message: recoveryMessage }, { headers: { 'Cache-Control': 'no-store' } });
   } catch (error) { return failure(error); }
 }

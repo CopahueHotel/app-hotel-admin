@@ -18,7 +18,8 @@
     "test:http": "node tests/hotel-http-smoke.mjs",
     "auth:setup": "node scripts/setup-auth.mjs",
     "auth:bootstrap": "node scripts/bootstrap-admin.mjs",
-    "auth:recovery-link": "node scripts/local-recovery.mjs"
+    "auth:recovery-link": "node scripts/local-recovery.mjs",
+    "auth:smtp": "node scripts/setup-smtp.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",

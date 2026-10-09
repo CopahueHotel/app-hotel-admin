@@ -85,9 +85,10 @@ test('mail adapter stays disabled without settings and sends only to the registe
   const known = await http.requestRecovery(f.authRequest('/api/auth/recovery/request', { email: 'ADMIN@example.test' }));
   const missing = await http.requestRecovery(f.authRequest('/api/auth/recovery/request', { email: 'missing@example.test' }));
   assert.equal(known.status, missing.status); assert.deepEqual(await known.json(), await missing.json());
+  await f.drainBackground();
   assert.equal(calls.length, 1); const payload = JSON.parse(calls[0].init.body);
   assert.deepEqual(payload.to, ['admin@example.test']); assert.match(payload.text, /http:\/\/localhost\/recuperar#[a-f0-9]{64}/);
-  assert.equal(calls[0].init.redirect, 'error');
+  assert.equal(calls[0].init.redirect, 'manual');
 });
 
 test('failed mail delivery returns the same generic response, removes its token and never logs secrets', async t => {
@@ -98,7 +99,20 @@ test('failed mail delivery returns the same generic response, removes its token 
   const response = await f.load('modules/access/recovery-http.ts').requestRecovery(f.authRequest('/api/auth/recovery/request', { email: 'admin@example.test' }));
   assert.equal(response.status, 200);
   assert.equal((await response.json()).message, f.load('modules/access/recovery.ts').recoveryMessage);
+  await f.drainBackground();
   assert.equal(await f.count('password_resets'), 0);
+});
+
+test('slow delivery completes after the HTTP response without exposing whether the email exists', async t => {
+  const f = await fixture(t), oldFetch = globalThis.fetch; let release;
+  const pending = new Promise(resolve => { release = resolve; });
+  t.after(() => { release(); globalThis.fetch = oldFetch; });
+  globalThis.fetch = async () => { await pending; return new Response(null, { status: 202 }); };
+  f.authEnv.MAIL_API_URL = 'https://mail.example.test/send'; f.authEnv.MAIL_API_KEY = 'test-only'; f.authEnv.MAIL_FROM = 'hotel@example.test';
+  const response = await f.load('modules/access/recovery-http.ts').requestRecovery(f.authRequest('/api/auth/recovery/request', { email: 'admin@example.test' }));
+  assert.equal(response.status, 200);
+  assert.equal((await response.json()).message, f.load('modules/access/recovery.ts').recoveryMessage);
+  release(); await f.drainBackground(); assert.equal(await f.count('password_resets'), 1);
 });
 
 test('private console recovery generates a hashed local link without changing the password or roles', async t => {

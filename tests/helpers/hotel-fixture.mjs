@@ -48,6 +48,7 @@ export async function fixture(t, beforeMigration) {
   const authEnv = { AUTH_ORIGIN: 'http://localhost', AUTH_PASSWORD_HASH: passwordHash };
   const modules = new Map();
   const errors = [];
+  const background = [];
   function load(file) {
     if (modules.has(file)) return modules.get(file);
     const code = ts.transpileModule(readFileSync(file, 'utf8'), {
@@ -57,7 +58,8 @@ export async function fixture(t, beforeMigration) {
     modules.set(file, exports);
     new Function('require', 'exports', 'console', code)(name => {
       if (name === '@/lib/hotel-db') return { database: () => db };
-      if (name === 'cloudflare:workers') return { env: authEnv };
+      if (name === 'cloudflare:workers') return { env: authEnv, waitUntil: promise => background.push(promise) };
+      if (name === 'cloudflare:sockets') return { connect: () => { throw Error('Test SMTP connector not provided'); } };
       if (name === '@/lib/hotel-auth') return load('lib/hotel-auth.ts');
       if (name === 'next/server') return { NextResponse: { next: () => new Response(null, { headers: { 'x-middleware-next': '1' } }) } };
       if (name === 'zod') return { z };
@@ -88,5 +90,5 @@ export async function fixture(t, beforeMigration) {
   }
   const one = (sql, ...args) => raw.prepare(sql).bind(...args).first();
   const count = async table => (await one(`SELECT COUNT(*) n FROM ${table}`)).n;
-  return { raw, post, one, count, api, auth, authEnv, authRequest, cookie, load, reloadAuth() { modules.delete('lib/hotel-auth.ts'); return load('lib/hotel-auth.ts'); }, setGate(fn) { gate = fn; } };
+  return { raw, post, one, count, api, auth, authEnv, authRequest, cookie, load, drainBackground: () => Promise.all(background), reloadAuth() { modules.delete('lib/hotel-auth.ts'); return load('lib/hotel-auth.ts'); }, setGate(fn) { gate = fn; } };
 }

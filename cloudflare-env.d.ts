@@ -8,5 +8,11 @@ declare namespace Cloudflare {
     MAIL_API_URL?: string;
     MAIL_API_KEY?: string;
     MAIL_FROM?: string;
+    MAIL_PROVIDER?: string;
+    SMTP_HOST?: string;
+    SMTP_PORT?: string;
+    SMTP_USER?: string;
+    SMTP_PASSWORD?: string;
+    MAIL_TEST_RECIPIENTS?: string;
   }
 }
