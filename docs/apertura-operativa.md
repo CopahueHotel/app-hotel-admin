@@ -7,7 +7,7 @@ La limpieza inicial autorizada conserva usuarios, contraseñas, roles, permisos,
 Antes de empezar:
 
 1. En **Usuarios y permisos**, crear cuentas individuales y asignar los roles necesarios; revisar sus permisos. El email de acceso de Gabriel es `info@copahuehotel.com.ar`. El buzón `sistema@copahuehotel.com.ar` es únicamente el remitente de recuperación.
-2. En **Configuración**, verificar habitaciones, cargar tarifas vigentes y definir el precio de comidas externas.
+2. En **Configuración**, verificar habitaciones y definir el precio de comidas externas. En **Tarifas**, cargar los valores vigentes del alojamiento.
 3. En **Stock**, crear el catálogo real y registrar existencias mediante los circuitos disponibles, con fecha y motivo. No se conservan precios ni mínimos inventados.
 4. Revisar con el responsable los saldos iniciales, deudas y reservas reales antes de registrar cobros o pagos. Los saldos se derivan de movimientos; no son campos editables. La apertura de saldos debe resolverse con los circuitos disponibles, sin simular ventas o cobros para representar dinero anterior.
 
