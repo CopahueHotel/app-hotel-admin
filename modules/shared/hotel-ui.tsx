@@ -6,7 +6,7 @@ import { Select,SelectContent,SelectItem,SelectTrigger,SelectValue } from '@/com
 import { Table,TableBody,TableCell,TableHead,TableHeader,TableRow } from '@/components/ui/table';
 import type { Booking,BookingTerms,Rate } from '@/lib/hotel-types';
 import { useState,type ComponentProps,type ReactNode } from 'react';
-export type EntryForm={bookingRecord?:Booking;terms?:BookingTerms;rate?:Rate;version?:number;action:string;id?:string|number;booking?:string;charge?:boolean;room?:number;start?:string;end?:string;amount?:number;product?:string;state?:string;note?:string;meal?:string;mealPrice?:number};
+export type EntryForm={customerId?:string;inquiryId?:string;inquiryVersion?:number;inquiryPax?:number;source?:string;bookingRecord?:Booking;terms?:BookingTerms;rate?:Rate;version?:number;action:string;id?:string|number;booking?:string;charge?:boolean;room?:number;start?:string;end?:string;amount?:number;product?:string;state?:string;note?:string;meal?:string;mealPrice?:number};
 export const shift=(s:string,n:number)=>{const d=new Date(s+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10)};
 export const fmt=(s:string)=>new Date(s+'T12:00:00Z').toLocaleDateString('es-AR',{timeZone:'America/Argentina/Buenos_Aires',day:'2-digit',month:'short'});
 export const sum=<T,>(a:T[],fn:(x:T)=>number)=>a.reduce((s,x)=>s+fn(x),0);

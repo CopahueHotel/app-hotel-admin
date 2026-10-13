@@ -1,5 +1,6 @@
 'use client';
 import { currentRegimes,regimeLabel } from '@/modules/shared/regimes';
+import { ReservationContact } from '@/modules/customers/contact-fields';
 import { TextField } from '@/modules/shared/fields';
 
 import { Input } from '@/components/ui/input';
@@ -15,7 +16,7 @@ export { RateFields,RatesPanel,RateTable } from '@/modules/tariffs/screen';
 
 
 
-export function ReservationFields({data,date,initial,booking,terms}:{data:HotelData;date:string;initial:{room?:number;start?:string;end?:string};booking?:Booking;terms?:BookingTerms}) {
+export function ReservationFields({data,date,initial,booking,terms}:{data:HotelData;date:string;initial:{room?:number;start?:string;end?:string;customerId?:string;inquiryId?:string;inquiryVersion?:number;inquiryPax?:number;source?:string};booking?:Booking;terms?:BookingTerms}) {
  const identity=useIdentity(),may=(permission:string)=>!identity||can(identity,permission);
  const [room,setRoom]=useState(String(booking?.room??initial.room??data.rooms.find(r=>r.state!=='Fuera de servicio')?.id??''));
  const [start,setStart]=useState(booking?.start??initial.start??date),[end,setEnd]=useState(booking?.end??initial.end??new Date(Date.parse(date)+86400000).toISOString().slice(0,10));
@@ -34,15 +35,15 @@ export function ReservationFields({data,date,initial,booking,terms}:{data:HotelD
  return <>
   <input type="hidden" name="quoteSnapshot" value={JSON.stringify(quote.nights)}/>
   {booking&&<><input type="hidden" name="id" value={booking.id}/><input type="hidden" name="version" value={terms?.version??0}/></>}
-  <TextField label="Nombre y apellido" name="guest" value={booking?.guest} required/>
-  <TextField label="Teléfono" name="phone" value={booking?.phone}/>
+  <ReservationContact initialId={initial.customerId||(data.booking_clients??[]).find(link=>link.booking===booking?.id)?.customer} fallback={booking?{name:booking.guest,phone:booking.phone}:undefined}/>
+  {initial.inquiryId&&<><input type="hidden" name="inquiryId" value={initial.inquiryId}/><input type="hidden" name="inquiryVersion" value={initial.inquiryVersion??0}/></>}
   <label className="field"><span>Habitación</span><select className="control" name="room" value={room} onChange={e=>setRoom(e.target.value)} required>{data.rooms.filter(r=>r.state!=='Fuera de servicio').map(r=><option key={r.id} value={r.id}>{r.id} · {r.type}</option>)}</select></label>
-  <label className="field"><span>Personas</span><Input name="pax" type="number" min="1" max={roomType==='Single'?1:2} defaultValue={booking?.pax??1} required/></label>
+  <label className="field"><span>Personas</span><Input name="pax" type="number" min="1" max={roomType==='Single'?1:2} defaultValue={booking?.pax??initial.inquiryPax??1} required/></label>
   <label className="field"><span>Llegada incluida</span><Input name="start" type="date" value={start} onChange={e=>setStart(e.target.value)} required/></label>
   <label className="field"><span>Salida excluida</span><Input name="end" type="date" value={end} min={start} onChange={e=>setEnd(e.target.value)} required/></label>
   <label className="field"><span>Régimen</span><select className="control" name="regime" value={regime} onChange={e=>setRegime(e.target.value)}>{currentRegimes.map(regime=><option key={regime} value={regime}>{regimeLabel(regime)}</option>)}{booking?.regime==='PC'&&<option value="PC">{regimeLabel('PC')}</option>}</select></label>
   <label className="field"><span>Comida para MP</span><select className="control" name="meal" defaultValue={booking?.meal??'Cena'}><option>Cena</option><option>Almuerzo</option></select></label>
-  <TextField label="Origen" name="source" value={booking?.source??'Directa'} required/>
+  <TextField label="Origen" name="source" value={booking?.source??initial.source??'Directa'} required/>
   <TextField label="Observaciones de reserva" name="note" value={booking?.note}/>
   <div className="full-width"><RateTable rates={data.room_rates} date={start||date}/></div>
   <label className="field"><span>Precio de alojamiento</span><select className="control" name="priceMode" value={mode} onChange={e=>setMode(e.target.value)}>{booking&&<option value="Conservar">Conservar precio y detalle guardados</option>}<option value="Tarifa">Calcular por tarifas de cada noche</option>{may('reservations.price')&&<option value="Acordado">Precio acordado antes de descuentos</option>}</select></label>

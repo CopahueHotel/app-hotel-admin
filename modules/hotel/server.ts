@@ -19,8 +19,10 @@ import { legacyOperations as settingsLegacy,planLegacy as settingsPlan } from '@
 import { operationContext } from '@/modules/shared/operations';
 import { legacyOperations as stockLegacy,planLegacy as stockPlan } from '@/modules/stock/legacy-operations';
 import { z } from 'zod';
+import { customerOperations,planCustomer } from '@/modules/customers/operations';
 export const dynamic='force-dynamic';
 const operationSchema=z.discriminatedUnion('action',[
+ ...customerOperations.options,
  ...userOperations.options,
  ...planningOperations.options,
  ...supplyOperations.options,
@@ -58,7 +60,8 @@ add('INSERT INTO operation_requests (key,fingerprint,created,user_id) VALUES (?,
 if('date' in d&&d.date&&['sale','payment','expense','payExpense','stock','purchase','transfer','movement','meal'].includes(action)){if(await db.prepare('SELECT date FROM daily_closes WHERE date>=? LIMIT 1').bind(d.date).first())throw new Error('Ese día ya está cerrado. Usá una fecha posterior al último cierre.');}
 
 const userChange=await planUsers(db,action,d,add,identity);
-const reservationChange=await planReservation(db,action,d,add);
+const reservationChange=await planReservation(db,action,d,add,identity);
+const customerChange=await planCustomer(db,action,d,add,identity);
 const mealChange=await planMeals(db,action,d,add);
 const supplyChange=await planSupply(db,action,d,add);
 const planningChange=await planPlanning(db,action,d,add);
@@ -70,7 +73,7 @@ await purchasesPlan(action,d,context);
 await stockPlan(action,d,context);
 await cashPlan(action,d,context);
 await settingsPlan(action,d,context);
-const change=userChange||reservationChange||mealChange||supplyChange||planningChange;
+const change=userChange||reservationChange||customerChange||mealChange||supplyChange||planningChange;
 const auditInput=userChange?{...d,password:undefined}:d;
 add('INSERT INTO audit_log (id,created,actor,action,detail,actor_id) VALUES (?,?,?,?,?,?)',id(),new Date().toISOString(),actor,action,JSON.stringify(change?{input:auditInput,...change}:auditInput),identity.id);
 stmts.push(guard.end);await db.batch(stmts);return Response.json({ok:true});}catch(e:unknown){

@@ -3,6 +3,7 @@ import { exactMoney,validDate } from '@/modules/shared/validation';
 import { quoteStay } from '@/modules/tariffs/domain';
 import { z } from 'zod';
 import { supportedRegimes } from '@/modules/shared/regimes';
+import { customerDetails } from '@/modules/customers/domain';
 export { reservationNights } from '@/modules/shared/nights';
 export { exactMoney,validDate } from '@/modules/shared/validation';
 export { quoteStay,rateSchema } from '@/modules/tariffs/domain';
@@ -19,9 +20,9 @@ const economics={
  quoteSnapshot:z.string().max(100000).optional(),
 };
 export const bookingSchema=z.object({
- guest:text,phone:z.string().max(80).default(''),room:z.coerce.number().int(),start:validDate,end:validDate,
+ guest:z.string().trim().max(240).default(''),phone:z.string().max(240).default(''),room:z.coerce.number().int(),start:validDate,end:validDate,
  pax:z.coerce.number().int().min(1).max(2),regime:z.enum(supportedRegimes),meal:z.enum(['Cena','Almuerzo']),
- source:text,note,...economics,
+ source:text,note,customerId:z.string().default(''),customer:customerDetails.optional(),inquiryId:z.string().default(''),inquiryVersion:z.coerce.number().int().nonnegative().optional(),...economics,
 });
 export const bookingEditSchema=bookingSchema.extend({id:text,version:z.coerce.number().int().nonnegative()});
 

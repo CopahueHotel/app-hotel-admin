@@ -169,3 +169,5 @@ select.control:disabled, textarea.control:disabled { opacity: .5; cursor: not-al
 }
 /* Visible environment identification, including login and printed lists. */
 .environment-banner { display:flex; flex-wrap:wrap; justify-content:center; gap:4px 12px; padding:10px 16px; background:#fff3cd; color:#573b00; font-size:14px; line-height:1.5; text-align:center; border-bottom:1px solid #dfbf66; }
+
+.customer-wide{grid-column:1/-1}.customer-contact{display:grid;gap:14px;padding:16px;border:1px solid var(--border);border-radius:8px}.customer-contact h3{font-size:16px}.customer-search-results{display:flex;gap:8px;flex-wrap:wrap}.customer-filters{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-bottom:20px}.customer-notes{white-space:pre-wrap;overflow-wrap:anywhere;margin:14px 0}@media(max-width:767px){.customer-filters{grid-template-columns:1fr}}

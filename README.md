@@ -49,6 +49,7 @@ Las pruebas utilizan bases temporales. `test:http` requiere la compilación prev
 - [Alcance y pendientes](ALCANCE.md).
 - [Apertura con datos reales](docs/apertura-operativa.md).
 - [Usuarios y recuperación de acceso](docs/recuperacion-acceso.md).
+- [Clientes, consultas y vinculación con reservas](docs/clientes.md).
 - [Administración y Pruebas](docs/entornos.md) y [despliegue en VPS](deploy/VPS.md).
 - [Respaldos cifrados y restauración](docs/respaldos.md). La copia externa a la PC requiere que esté encendida, con sesión iniciada y conectada.
 - [WordPress y migración de la web](docs/wordpress.md).

@@ -5,6 +5,7 @@ import { pathToFileURL } from 'node:url';
 import { randomUUID } from 'node:crypto';
 
 export const operationalTables = [
+  'booking_clients','customer_inquiries','customers',
   'bookings', 'room_nights', 'products', 'stock_movements', 'sales', 'expenses',
   'cash_movements', 'daily_closes', 'meal_overrides', 'operation_requests',
   'room_rates', 'booking_terms', 'room_blocks', 'booking_guests', 'meal_suspensions',

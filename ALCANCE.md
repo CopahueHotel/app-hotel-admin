@@ -1,6 +1,7 @@
 # Alcance de la primera versión
 
 ## Implementado
+- Clientes: fichas centrales con contactos opcionales, coincidencias normalizadas sin fusión automática, consultas y seguimiento manual, vínculo transaccional con reservas, datos históricos preservados, consentimiento promocional separado, CSV filtrado y permisos específicos. Migración conservadora de una ficha por reserva anterior. Sin sincronización de correos ni Zoho CRM; revisión operativa y conciliación manual de históricos pendientes.
 - HOT-15 a HOT-18: cuentas individuales activas/inactivas, alta y restablecimiento por superadministradores, ocho roles sumables, matriz configurable por módulo/acción y permisos específicos. Autorización y filtrado de campos en servidor, identidad desde sesión, revisión de acceso dentro del batch, revocación vigente y protección del último superadministrador activo. Históricos sin atribuciones inventadas; primer administrador mediante consola local.
 - HOT-19: pantallas, formularios y operaciones agrupados en `modules/`, rutas delgadas y coordinación transaccional compartida. Reservas, habitaciones, tarifas, alimentación, bebidas, stock, compras, proveedores, menú, caja, personal, informes y acceso conservan sus conexiones y exportaciones compatibles.
 - HOT-12: fichas de proveedores y frecuencia habitual separada de entregas concretas, generación sin duplicados, calendario/listado, reprogramación individual con historial, fechas A confirmar y vínculo a compras/recepción sin stock ni pagos automáticos.

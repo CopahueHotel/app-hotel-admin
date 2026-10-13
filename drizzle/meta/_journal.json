@@ -85,6 +85,13 @@
       "when": 1791563272801,
       "tag": "0011_current_hotel_regimes",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "6",
+      "when": 1791914016386,
+      "tag": "0012_magenta_runaways",
+      "breakpoints": true
     }
   ]
 }

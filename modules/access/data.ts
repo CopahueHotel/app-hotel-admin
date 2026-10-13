@@ -1,7 +1,7 @@
 import { accessGuard } from '@/lib/hotel-auth';
 import type { HotelData } from '@/lib/hotel-types';
 import { can,type Identity } from '@/modules/access/permissions';
-export const hotelTables=['rooms','bookings','products','stock_movements','sales','expenses','cash_movements','daily_closes','settings','meal_overrides','audit_log','room_rates','booking_terms','room_blocks','booking_guests','meal_suspensions','meal_services','meal_plans','beverage_accounts','beverage_dispatches','beverage_settlements','beverage_transfers','beverage_returns','beverage_corrections','purchase_documents','purchase_lines','purchase_receipts','supplier_payment_details','suppliers','supplier_deliveries','menu_plans','menu_actuals'] as const;
+export const hotelTables=['booking_clients','rooms','bookings','products','stock_movements','sales','expenses','cash_movements','daily_closes','settings','meal_overrides','audit_log','room_rates','booking_terms','room_blocks','booking_guests','meal_suspensions','meal_services','meal_plans','beverage_accounts','beverage_dispatches','beverage_settlements','beverage_transfers','beverage_returns','beverage_corrections','purchase_documents','purchase_lines','purchase_receipts','supplier_payment_details','suppliers','supplier_deliveries','menu_plans','menu_actuals'] as const;
 export async function readHotelData(db:D1Database,identity:Identity){
  const has=(p:string)=>can(identity,p),reservation=has('reservations.view'),restaurant=has('restaurant.view'),food=has('meals.view')||has('menu.view')||restaurant;
  const financial=has('cash.view')||has('reports.view'),bookingMoney=reservation&&has('reservations.balance'),purchaseMoney=has('purchases.view')&&has('purchases.financial');
@@ -11,6 +11,11 @@ export async function readHotelData(db:D1Database,identity:Identity){
   queries.bookings=reservation?(bookingMoney?'SELECT * FROM bookings':'SELECT id,guest,phone,room,start,end,pax,regime,meal,status,source,note FROM bookings'):'SELECT id,guest,room,start,end,pax,regime,meal,status FROM bookings';
  }
  if(has('rooms.view'))queries.room_blocks='SELECT * FROM room_blocks';
+ if(reservation)queries.booking_clients='SELECT booking,customer,NULL AS inquiry FROM booking_clients';
+ if(queries.bookings){
+  const cols=reservation?['id','guest','phone','room','start','end','pax','regime','meal',...(bookingMoney?['amount']:[]),'status','source','note']:['id','guest','room','start','end','pax','regime','meal','status'];
+  queries.bookings='SELECT '+cols.map(col=>col==='guest'?'COALESCE(c.name,b.guest) AS guest':col==='phone'?'COALESCE(c.phone,b.phone) AS phone':'b.'+col).join(',')+' FROM bookings b LEFT JOIN booking_clients l ON l.booking=b.id LEFT JOIN customers c ON c.id=l.customer';
+ }
  if(has('tariffs.view'))queries.room_rates='SELECT * FROM room_rates';
  if(bookingMoney)queries.booking_terms='SELECT * FROM booking_terms';
  if(food||reservation){

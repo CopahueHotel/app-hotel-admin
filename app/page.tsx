@@ -14,6 +14,7 @@ import type { Booking,Expense,HotelData,Product } from '@/lib/hotel-types';
 import { bookingBalance,currency,filterBookings,filterCash,filterProducts,serializeCsv } from '@/lib/hotel-view';
 import { AccessProvider,Allowed,ActionButton as Button } from '@/modules/access/context';
 import { can,navigationPermissions,operationPermissions,type PublicIdentity } from '@/modules/access/permissions';
+import { CustomersLoader } from '@/modules/customers/screen';
 import { UsersScreen } from '@/modules/access/screen';
 import { CloseFields,MovementFields,PaymentFields,TransferFields } from '@/modules/cash/entry-fields';
 import { CashScreen } from '@/modules/cash/screen';
@@ -37,7 +38,7 @@ import { useCallback,useEffect,useRef,useState,type CSSProperties,type FormEvent
 import { toast } from 'sonner';
 
 type ModelContext={registerTool:(tool:{name:string;title:string;description:string;inputSchema:unknown;annotations:{readOnlyHint:boolean};execute:(input:{section:string})=>unknown},options:{signal:AbortSignal})=>unknown};
-const nav=[['Inicio',LayoutDashboard],['Calendario',CalendarDays],['Reservas',BedDouble],['Restaurante',UtensilsCrossed],['Caja',Wallet],['Compras y gastos',Receipt],['Stock',Package],['Agenda de proveedores',CalendarDays],['Menú mensual',UtensilsCrossed],['Personal',Users],['Informes',BarChart3],['Configuración',Settings],['Tarifas',Receipt],['Usuarios y permisos',Users]] as const;
+const nav=[['Inicio',LayoutDashboard],['Calendario',CalendarDays],['Reservas',BedDouble],['Clientes',Users],['Restaurante',UtensilsCrossed],['Caja',Wallet],['Compras y gastos',Receipt],['Stock',Package],['Agenda de proveedores',CalendarDays],['Menú mensual',UtensilsCrossed],['Personal',Users],['Informes',BarChart3],['Configuración',Settings],['Tarifas',Receipt],['Usuarios y permisos',Users]] as const;
 const localDate=hotelDate;
 
 export default function Page(){
@@ -84,7 +85,7 @@ export default function Page(){
   }catch(cause){toast.error(cause instanceof Error?cause.message:'No se pudo cerrar la sesi\u00f3n.');setBusy(false);}
  }
  const open=(action:string,initial:Omit<EntryForm,'action'>={})=>{try{if(!data||operationPermissions(action==='cancel'?'status':action,{...initial,...(action==='rate'?{id:initial.rate?.id}:{}),...(action==='cancel'?{status:'Cancelada'}:{})}).some(p=>!can(data.identity,p)))return toast.error('No tenes permiso para esa accion.');}catch{return;}setForm({action,...initial});};
- async function submit(e:FormEvent<HTMLFormElement>){e.preventDefault();const values:Record<string,FormDataEntryValue|boolean>=Object.fromEntries(new FormData(e.currentTarget));for(const k of ['paid','charge'])if(k in values)values[k]=values[k]==='true';setBusy(true);try{if(!form)return;await save(form.action,values);setForm(null);await load();toast.success('Registro guardado')}catch(e:unknown){toast.error(e instanceof Error?e.message:'No se pudo guardar.')}finally{setBusy(false)}}
+ async function submit(e:FormEvent<HTMLFormElement>){e.preventDefault();const values:Record<string,unknown>=Object.fromEntries(new FormData(e.currentTarget));if((form?.action==='booking'||form?.action==='bookingEdit')&&!values.customerId){values.customer={name:values.guest,phone:values.phone,email:values.customerEmail??'',locality:values.customerLocality??'',province:values.customerProvince??'',country:values.customerCountry??'',origin:values.customerOrigin??'Otro',duplicateConfirmed:values.customerDuplicate==='on'};}for(const k of ['paid','charge'])if(k in values)values[k]=values[k]==='true';setBusy(true);try{if(!form)return;await save(form.action,values);setForm(null);await load();toast.success('Registro guardado')}catch(e:unknown){toast.error(e instanceof Error?e.message:'No se pudo guardar.')}finally{setBusy(false)}}
  async function act(action:string,d:unknown){setBusy(true);try{await save(action,d);await load();toast.success('Cambio guardado')}catch(e:unknown){toast.error(e instanceof Error?e.message:'No se pudo guardar.')}finally{setBusy(false)}}
  if(!data)return <main className="load-screen"><Hotel size={40}/><h1>Hotel · Administración</h1>{loading?<p><Loader2 className="spin"/> Cargando registros…</p>:<><p role="alert">{error}</p><Button onClick={reload}>Reintentar</Button></>}</main>;
  const identity=data.identity;
@@ -104,8 +105,8 @@ export default function Page(){
  const diners=(meal:string)=>kitchenTotals(kitchenRows(data,date,meal as Service)).hotel;
  const saveMeals=async(action:string,values:unknown)=>{await save(action,values);await load();};
  const mealPrice=Number(data.settings.find((s)=>s.key==='mealPrice')?.value||0);
- const titles:Record<string,string>={Tarifas:'Tarifas de alojamiento','Usuarios y permisos':'Usuarios y permisos',Inicio:'Resumen del día',Calendario:'Calendario de habitaciones',Reservas:'Reservas y huéspedes',Restaurante:'Restaurante',Caja:'Caja y cuentas','Compras y gastos':'Compras y gastos',Stock:'Inventario',Informes:'Informes de gestión',Configuración:'Configuración','Agenda de proveedores':'Agenda de proveedores','Menú mensual':'Menú mensual',Personal:'Personal'};
- const subtitles:Record<string,string>={Tarifas:'Valores vigentes por habitacion y noche.','Usuarios y permisos':'Cuentas individuales y matriz de permisos.',Inicio:'Hotel y restaurante, en una misma vista.',Calendario:'Disponibilidad y estadías de las 17 habitaciones.',Reservas:'Cada estadía, sus consumos y su saldo.',Restaurante:'Comidas del día, bebidas y cargos a habitación.',Caja:'Movimientos compartidos y cierre diario.','Compras y gastos':'Proveedores, vencimientos y pagos pendientes.',Stock:'Existencias, reposición y movimientos por producto.',Informes:'Consultá los registros que explican cada número.',Configuración:'Parámetros del establecimiento.','Agenda de proveedores':'Frecuencias, pedidos y entregas particulares.','Menú mensual':'Platos previstos y servidos, vinculados a comensales.',Personal:'Planificación, asistencia y novedades del equipo.'};
+ const titles:Record<string,string>={Clientes:'Clientes y consultas',Tarifas:'Tarifas de alojamiento','Usuarios y permisos':'Usuarios y permisos',Inicio:'Resumen del día',Calendario:'Calendario de habitaciones',Reservas:'Reservas y huéspedes',Restaurante:'Restaurante',Caja:'Caja y cuentas','Compras y gastos':'Compras y gastos',Stock:'Inventario',Informes:'Informes de gestión',Configuración:'Configuración','Agenda de proveedores':'Agenda de proveedores','Menú mensual':'Menú mensual',Personal:'Personal'};
+ const subtitles:Record<string,string>={Clientes:'Contactos, estadías y seguimiento manual.',Tarifas:'Valores vigentes por habitacion y noche.','Usuarios y permisos':'Cuentas individuales y matriz de permisos.',Inicio:'Hotel y restaurante, en una misma vista.',Calendario:'Disponibilidad y estadías de las 17 habitaciones.',Reservas:'Cada estadía, sus consumos y su saldo.',Restaurante:'Comidas del día, bebidas y cargos a habitación.',Caja:'Movimientos compartidos y cierre diario.','Compras y gastos':'Proveedores, vencimientos y pagos pendientes.',Stock:'Existencias, reposición y movimientos por producto.',Informes:'Consultá los registros que explican cada número.',Configuración:'Parámetros del establecimiento.','Agenda de proveedores':'Frecuencias, pedidos y entregas particulares.','Menú mensual':'Platos previstos y servidos, vinculados a comensales.',Personal:'Planificación, asistencia y novedades del equipo.'};
  const exportCsv=()=>{
   const exportModule=navigationPermissions[page]?.split('.')[0];if(!exportModule||!can(identity,exportModule+'.export'))return;
 
@@ -128,6 +129,7 @@ export default function Page(){
  {page==='Compras y gastos'&&can(identity,'purchases.view')&&<Purchases key={planningPurchase} data={data} date={date} onSave={saveMeals} initialExpense={planningPurchase}/>}
  {page==='Stock'&&can(identity,'stock.view')&&<StockScreen stockCategory={stockCategory} setStockCategory={setStockCategory} low={low} open={open} exportCsv={exportCsv} filteredProducts={filteredProducts} stock={stock} ledger={ledger} products={products}/>}
  {page==='Informes'&&can(identity,'reports.view')&&<ReportsScreen reportFrom={reportFrom} setReportFrom={setReportFrom} reportTo={reportTo} setReportTo={setReportTo} exportCsv={exportCsv} cash={cash} expenses={expenses} data={data}/>}
+ {page==='Clientes'&&can(identity,'customers.view')&&<CustomersLoader key={JSON.stringify(identity.permissions)} date={date} onSave={save} onChange={load} onBook={initial=>open('booking',initial)} onBooking={id=>setDetail(id)}/>}
  {page==='Configuración'&&can(identity,'settings.view')&&<SettingsScreen open={open} mealPrice={mealPrice} rooms={rooms}/>}
  {page==='Tarifas'&&can(identity,'tariffs.view')&&<Allowed permission="tariffs.view"><RatesPanel data={data} date={date} onOpen={rate=>open('rate',{rate})}/></Allowed>}
  {page==='Usuarios y permisos'&&can(identity,'users.view')&&<UsersScreen onSave={saveMeals}/>}
