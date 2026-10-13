@@ -1,0 +1,10 @@
+[Unit]
+Description=Weekly isolated restoration of Hotel Administration
+
+[Timer]
+OnCalendar=Sun *-*-* 04:00:00 America/Argentina/Buenos_Aires
+Persistent=true
+Unit=hotel-backup-restore-test.service
+
+[Install]
+WantedBy=timers.target

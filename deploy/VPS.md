@@ -49,7 +49,7 @@ runuser -u hotel-admin -- npm test
 runuser -u hotel-admin -- npm run test:http
 ```
 
-No reemplazar `.wrangler/state/` con la copia de desarrollo. Los respaldos automáticos siguen pendientes; esta instalación es para testeo.
+No reemplazar `.wrangler/state/` con la copia de desarrollo. Administración tiene respaldos automáticos cifrados, copia a la PC y pruebas aisladas de restauración; ver [Respaldos](../docs/respaldos.md). Conservar también el respaldo previo a cada actualización.
 
 ## Verificación realizada
 
