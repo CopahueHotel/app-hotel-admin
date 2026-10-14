@@ -1,14 +1,12 @@
 'use client';
-import { Departures,GuestMeals } from '@/components/hotel-meals';
+import { Departures } from '@/components/hotel-meals';
 import { MenuPlanner,PersonnelLoader,SupplierAgenda } from '@/components/hotel-planning';
-import { EconomicDetail,RateFields,RatesPanel,RateTable,ReservationFields } from '@/components/hotel-reservations';
+import { RateFields,RatesPanel,RateTable,ReservationFields } from '@/components/hotel-reservations';
 import { Purchases } from '@/components/hotel-supply';
 import { Dialog,DialogContent,DialogDescription,DialogHeader,DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Sheet,SheetContent,SheetDescription,SheetHeader,SheetTitle } from '@/components/ui/sheet';
 import { Sidebar,SidebarContent,SidebarFooter,SidebarHeader,SidebarInset,SidebarMenu,SidebarMenuButton,SidebarMenuItem,SidebarProvider,SidebarTrigger } from '@/components/ui/sidebar';
 import { Toaster } from '@/components/ui/sonner';
-import { Tabs,TabsContent,TabsList,TabsTrigger } from '@/components/ui/tabs';
 import { departureText,hotelDate,kitchenRows,kitchenTotals,type Service } from '@/lib/hotel-meals';
 import type { Booking,Expense,HotelData,Product } from '@/lib/hotel-types';
 import { bookingBalance,currency,filterBookings,filterCash,filterProducts,serializeCsv } from '@/lib/hotel-view';
@@ -24,13 +22,14 @@ import { ExpenseFields,PayExpenseFields,PurchaseFields } from '@/modules/purchas
 import { ReportsScreen } from '@/modules/reports/screen';
 import { BarterFields } from '@/modules/reservations/entry-fields';
 import { ReservationsScreen } from '@/modules/reservations/screen';
+import { ReservationSheet } from '@/modules/reservations/detail';
 import { SaleFields } from '@/modules/restaurant/forms';
 import { RestaurantScreen } from '@/modules/restaurant/screen';
 import { BlockFields,RoomFields,UnblockFields } from '@/modules/rooms/entry-fields';
 import { CalendarScreen } from '@/modules/rooms/screen';
 import { SettingsFields } from '@/modules/settings/entry-fields';
 import { SettingsScreen } from '@/modules/settings/screen';
-import { DataTable,Field,fmt,shift,Status,sum,type EntryForm } from '@/modules/shared/hotel-ui';
+import { Field,fmt,shift,Status,sum,type EntryForm } from '@/modules/shared/hotel-ui';
 import { ProductFields,StockFields } from '@/modules/stock/entry-fields';
 import { StockScreen } from '@/modules/stock/screen';
 import { BarChart3,BedDouble,CalendarDays,Check,Hotel,LayoutDashboard,Loader2,Package,Plus,Receipt,RefreshCw,Settings,Users,UtensilsCrossed,Wallet } from 'lucide-react';
@@ -135,7 +134,13 @@ export default function Page(){
  {page==='Usuarios y permisos'&&can(identity,'users.view')&&<UsersScreen onSave={saveMeals}/>}
  {page==='Sin acceso'&&<div className="notice">Tu cuenta no tiene modulos de consulta habilitados. Solicita acceso al superadministrador.</div>}
  <footer className="workspace-footer"><span>Hotel · Administración</span></footer></main></SidebarInset>
- <Sheet open={!!selected} onOpenChange={v=>!v&&setDetail(null)}><SheetContent className="booking-sheet"><SheetHeader><SheetTitle>{selected?.guest}</SheetTitle><SheetDescription>Habitación {selected?.room} · {selected?.regime} · {selected?.pax} personas</SheetDescription></SheetHeader>{selected&&<div className="sheet-body"><div className="reservation-dates"><div>Llegada<strong>{fmt(selected.start)}</strong></div><div>Salida<strong>{fmt(selected.end)}</strong></div><Status value={selected.status}/></div><p className="departure-notice">{departureText(selected,date)} · consulta {date} (hora del hotel)</p><Allowed permission="meals.view"><GuestMeals booking={selected} data={data} date={date} onSave={saveMeals}/></Allowed><Allowed permission="reservations.balance"><EconomicDetail booking={selected} terms={termsFor(selected.id)} data={data} onBarter={()=>open('barter',{booking:selected.id,version:termsFor(selected.id)?.version??0})}/></Allowed><Allowed permission="reservations.balance"><div className="balance-card"><span>Saldo pendiente</span><strong>{currency(balance(selected))}</strong><small>Alojamiento {currency(selected.amount)} + cargos a estadía − cobros</small></div></Allowed><div className="inline-controls"><Button disabled={busy||['Cancelada','Finalizada'].includes(selected.status)} onClick={()=>open('payment',{booking:selected.id,amount:balance(selected)/100})} permission="reservations.collect">Registrar cobro</Button><Button variant="outline" disabled={['Cancelada','Finalizada'].includes(selected.status)} onClick={()=>open('sale',{booking:selected.id,charge:true})} permission="restaurant.create">Agregar consumo</Button></div><Tabs defaultValue="Datos"><TabsList>{['Datos','Consumos','Pagos'].map(t=><TabsTrigger value={t} key={t}>{t}</TabsTrigger>)}</TabsList><TabsContent value="Datos"><dl className="detail-list"><dt>Origen</dt><dd>{selected.source}</dd><dt>Contacto</dt><dd>{selected.phone||'Sin registrar'}</dd><dt>Noches</dt><dd>{Math.round((Date.parse(selected.end)-Date.parse(selected.start))/86400000)}</dd><dt>Media pensión</dt><dd>{selected.regime==='MP'?selected.meal:'No corresponde'}</dd><dt>Observaciones</dt><dd>{selected.note||'Sin observaciones'}</dd></dl>{!['Finalizada','Cancelada'].includes(selected.status)&&<div className="status-actions"><Button variant="outline" disabled={busy} onClick={()=>open('bookingEdit',{bookingRecord:selected,terms:termsFor(selected.id)})} permission="reservations.edit">Editar reserva y condiciones</Button><Button variant="outline" disabled={busy} onClick={()=>act('status',{id:selected.id,status:selected.status==='Alojado'?'Finalizada':'Alojado'})} permission="reservations.edit">{selected.status==='Alojado'?'Finalizar estadía':'Registrar llegada'}</Button><Button variant="outline" disabled={busy} onClick={()=>open('cancel',{id:selected.id})} permission="reservations.cancel">Cancelar reserva</Button></div>}</TabsContent><Allowed permission="reservations.balance"><TabsContent value="Consumos"><DataTable heads={['Fecha','Detalle','Importe','Tratamiento']} rows={sales.filter((s)=>s.booking===selected.id).map((s)=>[fmt(s.date),s.label,currency(s.amount),s.amount===0?s.kind:s.account?'Pagado en '+s.account:'Cargo a estadía'])}/></TabsContent></Allowed><Allowed permission="reservations.balance"><TabsContent value="Pagos"><DataTable heads={['Fecha','Cuenta','Importe']} rows={cash.filter((m)=>m.ref===selected.id&&m.kind==='Cobro').map((m)=>[fmt(m.date),m.account,currency(m.amount)])}/></TabsContent></Allowed></Tabs></div>}</SheetContent></Sheet>
+ <ReservationSheet booking={selected} terms={selected?termsFor(selected.id):undefined} data={data} date={date} busy={busy} onClose={()=>setDetail(null)} onSaveMeals={saveMeals}
+  onEdit={()=>{if(selected)open('bookingEdit',{bookingRecord:selected,terms:termsFor(selected.id)});}}
+  onStatus={()=>{if(selected)void act('status',{id:selected.id,status:selected.status==='Alojado'?'Finalizada':'Alojado'});}}
+  onCancel={()=>{if(selected)open('cancel',{id:selected.id});}}
+  onPayment={()=>{if(selected)open('payment',{booking:selected.id,amount:balance(selected)/100});}}
+  onSale={()=>{if(selected)open('sale',{booking:selected.id,charge:true});}}
+  onBarter={()=>{if(selected)open('barter',{booking:selected.id,version:termsFor(selected.id)?.version??0});}}/>
  <Dialog open={ratesOpen} onOpenChange={setRatesOpen}><DialogContent><DialogHeader><DialogTitle>Tarifas por habitación y noche</DialogTitle><DialogDescription>Consulta por fecha, sin abandonar la carga de reservas.</DialogDescription></DialogHeader><Input aria-label="Fecha para consultar tarifas" type="date" value={date} onChange={e=>setDate(e.target.value)}/><RateTable rates={data.room_rates} date={date}/></DialogContent></Dialog>
  <Dialog open={!!form} onOpenChange={v=>!v&&!busy&&setForm(null)}><DialogContent className="entry-dialog"><DialogHeader><DialogTitle>{({bookingEdit:'Editar reserva y condiciones',rate:'Tarifa por habitación y noche',block:'Bloquear noches por mantenimiento',unblock:'Liberar bloqueo de mantenimiento',barter:'Cumplimiento de canje',booking:'Nueva reserva',sale:'Registrar consumo',payment:'Cobro de estadía',expense:'Registrar gasto',payExpense:'Pago a proveedor',purchase:'Compra e ingreso a stock',stock:'Movimiento de stock',product:'Nuevo producto',room:'Estado de habitación',close:'Cierre diario de caja',settings:'Precio de comida externa',transfer:'Transferencia entre cuentas',movement:'Aporte / retiro de socios',meal:'Elección de media pensión',cancel:'Cancelar reserva'} as Record<string,string>)[form?.action??'']}</DialogTitle><DialogDescription>{form?.action==='booking'?'La habitación quedará reservada desde la llegada hasta el día anterior a la salida.':form?.action==='close'?'El cierre conserva los importes del día y bloquea nuevas cargas en esa fecha.':'Los cambios se guardan en la base de datos de prueba.'}</DialogDescription></DialogHeader>{form&&form.action==='cancel'?<div><p>Solo se pueden cancelar aquí reservas sin cobros ni consumos. La habitación se liberará.</p><div className="form-actions"><Button variant="outline" onClick={()=>setForm(null)}>Volver</Button><Button disabled={busy} onClick={async()=>{await act('status',{id:form.id,status:'Cancelada'});setForm(null)}}>Confirmar cancelación</Button></div></div>:form&&<form onSubmit={submit} className="entry-form"><div className="form-grid">
  {['booking','bookingEdit'].includes(form.action)&&<ReservationFields data={data} date={date} initial={form} booking={form.bookingRecord} terms={form.terms}/>}

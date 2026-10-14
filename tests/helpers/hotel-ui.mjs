@@ -12,6 +12,7 @@ export function loadUi(f,file){
   new Function('require','exports',code)(name=>{
    if(name==='@/components/ui/button')return {Button:props=>{const attrs={...props};delete attrs.variant;return React.createElement('button',attrs);}};
    if(name==='@/components/ui/input')return {Input:props=>React.createElement('input',props)};
+   if(name==='@/lib/utils')return load('lib/utils.ts');
    if(name.startsWith('@/lib/'))return f.load(name.slice(2)+'.ts');
    if(name.startsWith('@/components/'))return load(name.slice(2)+'.tsx');
    if(name.startsWith('@/modules/'))return existsSync(name.slice(2)+'.tsx')?load(name.slice(2)+'.tsx'):f.load(name.slice(2)+'.ts');

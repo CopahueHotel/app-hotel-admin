@@ -2,6 +2,12 @@
 
 Los comandos se ejecutan desde la raíz del proyecto. Ver [inicio rápido](../README.md), [alcance y pendientes](../ALCANCE.md) y [respaldos automáticos](respaldos.md).
 
+## Ficha lateral de reserva
+
+Al seleccionar una reserva, el panel muestra primero habitación, estado, llegada/salida, noches, recordatorio de salida y saldo, cuando el rol permite consultarlo. Las acciones de llegada/salida, cobro y consumo se agrupan debajo; las reservas finalizadas o canceladas no muestran esas acciones.
+
+Las pestañas separan **Resumen** (contacto, régimen, condición de pago y observaciones), **Alimentación** (personas y comidas), **Cuenta** (condiciones económicas, consumos y cobros reales) e **Historial** (cambios y responsables disponibles). Las pestañas aparecen según permisos. El detalle tarifario sigue desplegable en Cuenta; no se recalculan importes guardados. Editar y cancelar se encuentran en Resumen, con la cancelación separada de las acciones habituales y las protecciones del servidor conservadas.
+
 ## Tarifas, disponibilidad y condiciones de reservas · etapa 1
 
 Aplicá `npm.cmd run db:local` antes de abrir esta versión. Se agrega la migración `0005_reservation_stage_one`; conserva los importes acordados y los cobros existentes, identificando el precio anterior como histórico, sin inventar tarifas ni reconstruir precios nocturnos.
