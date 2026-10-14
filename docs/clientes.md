@@ -5,7 +5,7 @@ La etapa agrega **Clientes** como registro central de titulares y contactos pote
 ## Uso
 
 - En **Clientes → Nuevo cliente**, registrar nombre y apellido, contacto, ubicación y origen inicial. Email y teléfono son opcionales, incluso ambos. El origen del cliente es distinto del canal de cada consulta y del origen de una reserva.
-- Abrir la ficha para consultar reservas y estadías, registrar consultas o modificar los datos personales. El historial identifica al usuario verificado y las fechas se muestran en horario del hotel.
+- Al seleccionar un nombre del listado se abre la ficha en el panel lateral derecho, con el mismo estilo de Reservas. Las pestañas Datos, Consultas, Reservas e Historial agrupan la información; el alta y la edición también se realizan en el panel. El historial identifica al usuario verificado y las fechas se muestran en horario del hotel.
 - En **Nueva reserva**, buscar por nombre, email o teléfono y seleccionar una ficha. También se puede crear el cliente en el mismo formulario; la ficha y la reserva se guardan en una sola transacción. Si falla disponibilidad, precio o cualquier validación, no queda una ficha accidental ni una consulta convertida.
 - Los datos de contacto de un cliente existente se modifican desde su ficha. Las reservas muestran su contacto actual, pero conservan los valores históricos que tenían guardados y sus importes acordados. Cambiar un teléfono no modifica precios ni condiciones de estadías anteriores.
 - El titular/contacto no equivale a todos los huéspedes. Los nombres de acompañantes, restricciones, preferencias y condiciones de alimentación siguen perteneciendo a las personas de cada estadía; no se copian a todas las reservas futuras.
