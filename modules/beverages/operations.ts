@@ -1,3 +1,4 @@
+import { appendReceipt,receiptFields } from '@/modules/cash/currency';
 import { exactMoney,validDate } from '@/lib/hotel-reservations';
 import type { HotelTables } from '@/lib/hotel-types';
 import { z } from 'zod';
@@ -21,8 +22,8 @@ export function appendBeverageStock(add:Add,sale:string,date:string,product:stri
  add("INSERT INTO stock_movements VALUES (?,?,?,?,'Venta / consumo',?)",crypto.randomUUID(),date,product,-qty,sale);
 }
 export const supplyOperations=z.discriminatedUnion('action',[z.object({action:z.literal('beverageAccount'),data:z.object({table:text,date:validDate,time:z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),...who})}),
-z.object({action:z.literal('beverageDispatch'),data:z.object({date:validDate,time:z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),product:text,qty,price:exactMoney,destination:z.enum(['Mesa','Estadía','Cortesía','Interno']),tableAccount:z.string().default(''),booking:z.string().default(''),customer:text,mode:z.enum(['Pendiente','Inmediato','Estadía','Sin cobro']),account,reason:note,...who})}),
-z.object({action:z.literal('beverageSettle'),data:z.object({tableAccount:text,date:validDate,method:z.enum(['Cobro','Estadía']),account,booking:z.string().default(''),...who})}),
+z.object({action:z.literal('beverageDispatch'),data:z.object({date:validDate,time:z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),product:text,qty,price:exactMoney,destination:z.enum(['Mesa','Estadía','Cortesía','Interno']),tableAccount:z.string().default(''),booking:z.string().default(''),customer:text,mode:z.enum(['Pendiente','Inmediato','Estadía','Sin cobro']),account,reason:note,...who,...receiptFields})}),
+z.object({action:z.literal('beverageSettle'),data:z.object({tableAccount:text,date:validDate,method:z.enum(['Cobro','Estadía']),account,booking:z.string().default(''),...who,...receiptFields})}),
 z.object({action:z.literal('beverageReturn'),data:z.object({dispatch:text,date:validDate,qty,reason:text,...who})}),
 z.object({action:z.literal('beverageCorrect'),data:z.object({dispatch:text,date:validDate,reason:text,...who})})]);
 export async function planSupply(db:D1Database,action:string,input:unknown,add:Add){
@@ -49,7 +50,8 @@ if(op.action==='beverageDispatch'){
   sale(id,d.date,b?.id??null,b?.guest??d.customer,p.name,d.qty,amount,free?d.destination==='Cortesía'?'Cortesía':'Interno':'Bebida',p.id,d.mode==='Inmediato'?d.account:null);
   appendBeverageStock(add,id,d.date,p.id,d.qty);
   add('INSERT INTO beverage_dispatches VALUES (?,?,?,?,?,?,?,?,?)',id,d.time,d.destination,d.tableAccount||null,d.mode,free?0:Math.round(d.price*100),d.reason,d.responsible,d.observation);
-  if(d.mode==='Inmediato')cash(d.date,d.account,amount,'Restaurante','Venta',id,p.name);
+  if(d.currency==='USD'&&d.mode!=='Inmediato')throw Error('El efectivo en USD requiere un cobro inmediato.');
+  if(d.mode==='Inmediato'){const movement=cash(d.date,d.account,amount,'Restaurante','Venta',id,p.name);appendReceipt(add,d.date,d,amount,d.account,[movement],d.responsible);}
   return {after:{sale:id}};
  }
 if(op.action==='beverageSettle'){
@@ -60,7 +62,10 @@ if(op.action==='beverageSettle'){
   // A settlement locks the account inside the same transaction; triggers reject
   // a concurrent dispatch/correction and ensure all current lines are included.
   add('INSERT INTO beverage_settlements VALUES (?,?,?,?,?,?,?)',d.tableAccount,d.date,d.method,d.method==='Cobro'?d.account:null,b?.id??null,d.responsible,d.observation);
-  for(const s of rows){if(b){const id=uuid();sale(id,d.date,b.id,b.guest,'Transferencia de mesa · '+s.label,0,s.amount,'Cargo de bebida',null,null);add('INSERT INTO beverage_transfers VALUES (?,?)',s.id,id);}else cash(d.date,d.account,s.amount,'Restaurante','Venta',s.id,'Cuenta de mesa · '+s.label);}
+  const movements:string[]=[];
+  for(const s of rows){if(b){const id=uuid();sale(id,d.date,b.id,b.guest,'Transferencia de mesa · '+s.label,0,s.amount,'Cargo de bebida',null,null);add('INSERT INTO beverage_transfers VALUES (?,?)',s.id,id);}else movements.push(cash(d.date,d.account,s.amount,'Restaurante','Venta',s.id,'Cuenta de mesa · '+s.label));}
+  if(d.currency==='USD'&&b)throw Error('La transferencia a estadía no es un cobro de dinero.');
+  if(!b)appendReceipt(add,d.date,d,rows.reduce((sum,s)=>sum+s.amount,0),d.account,movements,d.responsible);
   return {after:{dispatches:rows.map(s=>s.id)}};
  }
 if(op.action==='beverageReturn'){const d=op.data,id=uuid();add('INSERT INTO beverage_returns VALUES (?,?,?,?,?,?,?)',id,d.dispatch,d.date,d.qty,d.reason,d.responsible,d.observation);return {after:{id}};}

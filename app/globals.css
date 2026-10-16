@@ -189,6 +189,8 @@ select.control:disabled, textarea.control:disabled { opacity: .5; cursor: not-al
 .room-move-fields{border:0;padding:0;margin:0;min-width:0}.room-move-fields textarea.control{height:auto;min-height:88px;padding:10px;resize:vertical}.room-segments{padding:16px;background:#f5f8fa;border:1px solid var(--border);border-radius:8px;margin-top:14px}.room-segments h3{font-size:16px;margin-bottom:12px}.room-segments p{font-size:14px;line-height:1.6;margin:8px 0;overflow-wrap:anywhere}.room-segments button{margin-top:10px}.calendar-cell[draggable=true]{cursor:grab}.calendar-cell[draggable=true]:active{cursor:grabbing}.calendar-cell.drop-available{box-shadow:inset 0 0 0 2px #22856d}.calendar-cell.drop-unavailable{box-shadow:inset 0 0 0 2px #c17d76}.reservation-history .history-record{overflow-wrap:anywhere}
 
 /* Module-wide alignment. Keep structural exceptions (calendar, login) explicit. */
+.account-grid { grid-template-columns: repeat(4,minmax(0,1fr)); }
+@media (max-width: 1200px) { .account-grid { grid-template-columns: repeat(2,minmax(0,1fr)); } }
 .workspace { font-size: 14px; line-height: 1.6; }
 .panel, .booking-sheet, .entry-dialog { color: var(--foreground); font-size: 14px; line-height: 1.6; }
 .panel { background: var(--card); }
@@ -285,6 +287,7 @@ select.control[multiple] { height: auto; min-height: 128px; }
 .planning-days button span { font-size: 12px; line-height: 1.4; }
 @media (max-width: 767px) {
   :root { --hotel-panel-padding: 16px; }
+  .account-grid { grid-template-columns: minmax(0,1fr); }
   .form-grid { grid-template-columns: minmax(0,1fr); }
   .toolbar > .field, .toolbar > .inline-controls, .heading-actions, .search-control { width: 100%; }
   .search-control input { width: 100%; }

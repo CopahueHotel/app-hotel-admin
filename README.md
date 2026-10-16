@@ -4,6 +4,8 @@ Aplicación para gestionar reservas, tarifas, restaurante, stock, compras, prove
 
 React/TypeScript con Vinext/Vite y persistencia SQLite mediante D1/Miniflare. Incluye cuentas individuales y permisos por módulo. Los saldos se derivan de movimientos; no constituye un sistema completo de facturación o contabilidad.
 
+Cobros de reservas y restaurante en ARS o efectivo USD: cada cobro en USD guarda el importe recibido y la cotización manual; tarifas y deudas permanecen en ARS. Caja cuenta ambas monedas por separado. Ver el procedimiento en el [manual](docs/manual-app.md).
+
 ## Desarrollo local
 
 Requiere **Node.js 22.13 o superior** y npm. Desde la raíz del proyecto:

@@ -238,6 +238,20 @@ Para cambiar una contraseña individual, usá **Usuarios y permisos → Restable
 
 Se incluyen fuentes, componentes, migraciones, configuración y lockfile. Se excluyen dependencias instaladas (`node_modules`), base local, compilados, secretos e historial `.git`.
 
+## Cobros en efectivo ARS y USD
+
+Las tarifas, consumos y deudas de estadías continúan en ARS. En **Registrar cobro**, indicá el **importe a aplicar en ARS**, elegí **USD**, ingresá los dólares efectivamente recibidos y la cotización acordada, expresada en ARS por 1 USD. La cotización admite hasta cuatro decimales; no se consulta ni se cambia automáticamente. No se precargan cotizaciones reales.
+
+El formulario muestra el equivalente y, si corresponde, el vuelto en ARS. Para entregar vuelto hay que confirmarlo expresamente y disponer de suficiente efectivo ARS registrado. No se acredita el excedente a la estadía ni se devuelve USD automáticamente. Para un pago parcial, indicá la parte de la deuda que se cobra en ARS. Los pagos mixtos de una estadía pueden registrarse como cobros parciales separados. El restaurante admite una moneda por operación.
+
+La misma selección está disponible al cobrar una comida, despachar bebidas con cobro inmediato o cerrar una cuenta de mesa mediante **Cobro**. Los cargos a habitación, incluidos y cortesías no reciben efectivo USD. En mesas de varias líneas, el cobro físico y su vuelto se guardan una sola vez; las ventas y la salida de stock conservan su circuito habitual.
+
+**Caja** e **Inicio** separan ARS de USD físicos. Los informes monetarios expresan el importe aplicado en ARS según la cotización guardada en el cobro, sin revaluar pagos anteriores. En la ficha de reserva se conserva el detalle del efectivo recibido, cotización y vuelto. Los CSV de Caja e Informes incluyen el identificador del recibo; dólares recibidos y vuelto se exportan una sola vez por recibo, aunque incluya varias ventas.
+
+En **Cerrar día**, contá e ingresá ARS y USD por separado. Cualquier diferencia requiere explicación. Las diferencias USD se conservan en USD sin inventar una conversión a pesos ni un cobro al huésped. Si ya se recibieron USD, la API también exige el conteo explícito. Los cierres anteriores a la migración no reciben conteos USD inventados.
+
+La migración `0015_mysterious_meggan` agrega recibos USD y conteos USD, conservando todos los movimientos y cierres existentes. Los responsables salen de la sesión y los permisos de cobro y cierre siguen vigentes; cocina y stock no reciben estos datos. Quedan fuera de esta etapa las tarifas o deudas en USD, la apertura de fondos USD preexistentes, pagos a proveedores, retiros/transferencias USD y cambios de divisas. Los movimientos de fondos existentes operan en ARS.
+
 ## Criterios visuales compartidos
 
 Los módulos conservan una tipografía y paleta comunes, con espaciados definidos en las variables `--hotel-space-*` y `--hotel-panel-padding` de `app/globals.css`. Los paneles usan 24 px de padding en escritorio y 16 px en móvil; los campos tienen 40 px de alto y los textos de entrada pasan a 16 px en móvil. Las fichas laterales de Clientes y Reservas comparten encabezados y pestañas adaptables. Los historiales separan acción, fecha y responsable, y el componente `Status` conserva el texto del estado junto con su color.
