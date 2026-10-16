@@ -11,6 +11,7 @@ import { ActionButton as Button,SessionResponsible,useIdentity } from '@/modules
 import { can } from '@/modules/access/permissions';
 import { RateTable } from '@/modules/tariffs/screen';
 import { useState } from 'react';
+import { roomSegments,roomUnavailable } from '@/modules/reservations/room-plan';
 export { RateFields,RatesPanel,RateTable } from '@/modules/tariffs/screen';
 
 
@@ -24,29 +25,31 @@ export function ReservationFields({data,date,initial,booking,terms}:{data:HotelD
  const [mode,setMode]=useState(booking?'Conservar':'Tarifa'),[benefit,setBenefit]=useState(terms?.benefit??'Habitual');
  const [gross,setGross]=useState(String((terms?.base_amount??booking?.amount??0)/100));
  const [discountType,setDiscountType]=useState(terms?.discount_type??'Ninguno'),[discountValue,setDiscountValue]=useState(String((terms?.discount_value??0)/100));
+ const split=!!booking&&roomSegments(data,booking).length>1;
  const roomType=data.rooms.find(r=>r.id===Number(room))?.type??'';
  const quote=quoteStay(data.room_rates,roomType,regime,start,end);
- const unavailable=data.bookings.some(b=>b.id!==booking?.id&&b.status!=='Cancelada'&&b.room===Number(room)&&b.start<end&&b.end>start)
-  ||data.room_blocks.some(b=>b.active&&b.room===Number(room)&&b.start<end&&b.end>start);
+ const unavailable=!split&&roomUnavailable(data,Number(room),start,end,booking?.id);
  const base=mode==='Conservar'?(terms?.base_amount??booking?.amount??0):mode==='Tarifa'?(quote.total??0):Math.round(Number(gross)*100);
  let discount=0,error='';
  try{discount=discountCents(base,discountType,Number(discountValue),benefit)}catch(cause){error=cause instanceof Error?cause.message:'Revisá el descuento.'}
  const special=mode==='Acordado'||benefit!=='Habitual'||discount>0;
  return <>
   <input type="hidden" name="quoteSnapshot" value={JSON.stringify(quote.nights)}/>
-  {booking&&<><input type="hidden" name="id" value={booking.id}/><input type="hidden" name="version" value={terms?.version??0}/></>}
+  {booking&&<><input type="hidden" name="id" value={booking.id}/><input type="hidden" name="version" value={terms?.version??0}/><input type="hidden" name="roomVersion" value={data.booking_room_plans?.find(plan=>plan.booking===booking.id)?.version??0}/></>}
+  {split&&<input type="hidden" name="room" value={room}/>}
+  {split&&<p className="form-note">La estadía tiene tramos de habitación: se conservan sus fechas. Para cambiar de habitación usá el traslado; para el precio, Conservar o Acordado.</p>}
   <ReservationContact initialId={initial.customerId||(data.booking_clients??[]).find(link=>link.booking===booking?.id)?.customer} fallback={booking?{name:booking.guest,phone:booking.phone}:undefined}/>
   {initial.inquiryId&&<><input type="hidden" name="inquiryId" value={initial.inquiryId}/><input type="hidden" name="inquiryVersion" value={initial.inquiryVersion??0}/></>}
-  <label className="field"><span>Habitación</span><select className="control" name="room" value={room} onChange={e=>setRoom(e.target.value)} required>{data.rooms.filter(r=>r.state!=='Fuera de servicio').map(r=><option key={r.id} value={r.id}>{r.id} · {r.type}</option>)}</select></label>
+  <label className="field"><span>Habitación</span><select className="control" name="room" disabled={split} value={room} onChange={e=>setRoom(e.target.value)} required>{data.rooms.filter(r=>r.state!=='Fuera de servicio'||split&&r.id===booking?.room).map(r=><option key={r.id} value={r.id}>{r.id} · {r.type}</option>)}</select></label>
   <label className="field"><span>Personas</span><Input name="pax" type="number" min="1" max={roomType==='Single'?1:2} defaultValue={booking?.pax??initial.inquiryPax??1} required/></label>
-  <label className="field"><span>Llegada incluida</span><Input name="start" type="date" value={start} onChange={e=>setStart(e.target.value)} required/></label>
-  <label className="field"><span>Salida excluida</span><Input name="end" type="date" value={end} min={start} onChange={e=>setEnd(e.target.value)} required/></label>
+  <label className="field"><span>Llegada incluida</span><Input name="start" type="date" readOnly={split} value={start} onChange={e=>setStart(e.target.value)} required/></label>
+  <label className="field"><span>Salida excluida</span><Input name="end" type="date" readOnly={split} value={end} min={start} onChange={e=>setEnd(e.target.value)} required/></label>
   <label className="field"><span>Régimen</span><select className="control" name="regime" value={regime} onChange={e=>setRegime(e.target.value)}>{currentRegimes.map(regime=><option key={regime} value={regime}>{regimeLabel(regime)}</option>)}{booking?.regime==='PC'&&<option value="PC">{regimeLabel('PC')}</option>}</select></label>
   <label className="field"><span>Comida para MP</span><select className="control" name="meal" defaultValue={booking?.meal??'Cena'}><option>Cena</option><option>Almuerzo</option></select></label>
   <TextField label="Origen" name="source" value={booking?.source??initial.source??'Directa'} required/>
   <TextField label="Observaciones de reserva" name="note" value={booking?.note}/>
   <div className="full-width"><RateTable rates={data.room_rates} date={start||date}/></div>
-  <label className="field"><span>Precio de alojamiento</span><select className="control" name="priceMode" value={mode} onChange={e=>setMode(e.target.value)}>{booking&&<option value="Conservar">Conservar precio y detalle guardados</option>}<option value="Tarifa">Calcular por tarifas de cada noche</option>{may('reservations.price')&&<option value="Acordado">Precio acordado antes de descuentos</option>}</select></label>
+  <label className="field"><span>Precio de alojamiento</span><select className="control" name="priceMode" value={mode} onChange={e=>setMode(e.target.value)}>{booking&&<option value="Conservar">Conservar precio y detalle guardados</option>}<option value="Tarifa" disabled={split}>Calcular por tarifas de cada noche</option>{may('reservations.price')&&<option value="Acordado">Precio acordado antes de descuentos</option>}</select></label>
   {mode==='Acordado'&&<label className="field"><span>Alojamiento acordado antes del descuento (ARS)</span><Input name="amount" type="number" min="0" step="0.01" value={gross} onChange={e=>setGross(e.target.value)} required/></label>}
   <label className="field"><span>Beneficio / carácter especial</span><select className="control" name="benefit" disabled={!may('reservations.special')} value={benefit} onChange={e=>setBenefit(e.target.value)}>{['Habitual','Descuento','Amigo','Canje','Cortesía'].map(b=><option key={b}>{b}</option>)}</select>{!may('reservations.special')&&<input type="hidden" name="benefit" value={benefit}/>}</label>
   <label className="field"><span>Tipo de descuento</span><select className="control" name="discountType" value={benefit==='Cortesía'?'Porcentaje':discountType} disabled={benefit==='Cortesía'||mode==='Conservar'||!may('reservations.discount')} onChange={e=>{setDiscountType(e.target.value);setDiscountValue('0')}}>{['Ninguno','Importe','Porcentaje'].map(t=><option key={t}>{t}</option>)}</select>{(benefit==='Cortesía'||mode==='Conservar'||!may('reservations.discount'))&&<input type="hidden" name="discountType" value={benefit==='Cortesía'?'Porcentaje':discountType}/>}</label>

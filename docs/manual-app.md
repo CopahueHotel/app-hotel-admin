@@ -2,6 +2,39 @@
 
 Los comandos se ejecutan desde la raíz del proyecto. Ver [inicio rápido](../README.md), [alcance y pendientes](../ALCANCE.md) y [respaldos automáticos](respaldos.md).
 
+## Grupos de reservas
+
+Aplicar `npm.cmd run db:local` para agregar `0013_aromatic_tusk`. La migración crea grupos y vínculos vacíos; no convierte ni modifica reservas, clientes o movimientos anteriores.
+
+En **Reservas → Grupos → Nuevo grupo**, indicar el nombre, cantidad de personas previstas y contacto responsable. El contacto se busca en Clientes o se crea una sola vez desde el formulario; no se utiliza el nombre del grupo como si fuera una persona. Hay dos alternativas:
+
+- **Nuevas habitaciones:** cargar fechas, régimen, condición de pago y observaciones comunes; seleccionar habitaciones y distribuir personas respetando Single/Doble. Cada habitación permite excepciones de fechas, régimen y condiciones. La tarifa se calcula por cada noche; si falta, indicar un precio acordado por la estadía completa de esa habitación, con explicación y permiso de precios. Revisar y luego confirmar guarda todo junto. Un conflicto de disponibilidad, mantenimiento o precio revierte el grupo completo, incluyendo un contacto nuevo. No se cargan importes reales de ejemplo ni ocupantes inventados.
+- **Reservas existentes:** elegir reservas sin grupo actual. Vincularlas no cambia su titular, datos de estadía, condiciones económicas, comidas, consumos o cobros. El contacto responsable del grupo puede ser distinto del titular de cada reserva. No se agrupan automáticamente por nombres similares.
+
+En **Ver grupos**, buscar por nombre y abrir la ficha lateral. Muestra habitaciones, fechas, estados y personas; con permiso de saldos, también alojamiento, cargos, cobros y saldo agregado de las reservas no canceladas. No es una cuenta común: cada cobro sigue registrándose desde la reserva correspondiente. No se reparten pagos entre habitaciones automáticamente.
+
+**Modificar grupo** cambia solamente su ficha y personas previstas: no propaga cambios a estadías existentes. **Vincular reservas existentes** agrega reservas; **Quitar del grupo** exige motivo, conserva historial y no cancela la reserva ni libera sus noches. Una reserva no puede pertenecer simultáneamente a dos grupos. Los nombres de los ocupantes y sus restricciones se completan después por persona desde Alimentación; no se presume que el organizador ocupa cada habitación.
+
+El nombre del grupo aparece en Calendario, en el listado y la ficha de reserva, y en el CSV de Reservas. La búsqueda de Reservas también admite el grupo. Crear usa permisos de creación de reservas; vincular, quitar y modificar usan los de modificación. La búsqueda/alta del contacto y los precios especiales conservan sus permisos propios; no se concede acceso financiero nuevo. Los cambios identifican la sesión autenticada y usan control de versiones.
+
+Esta etapa no incorpora cobro común, modificaciones masivas de estadías ya creadas, cancelación colectiva ni entradas/salidas automáticas. Los descuentos y acuerdos especiales adicionales pueden gestionarse desde la ficha individual con sus permisos y reglas vigentes.
+
+## Cambios de habitación y arrastre en Calendario
+
+Aplicar `npm.cmd run db:local` para agregar `0014_brief_inertia`. Se conserva la ocupación anterior y se agrega un plan inicial por reserva, sin cambiar importes, cobros, consumos, clientes ni grupos. No se inventan traslados históricos ni responsables.
+
+En **Calendario**, una reserva **Confirmada** sin tramos se puede arrastrar a otra habitación. El movimiento mantiene llegada y salida, sin importar sobre qué columna del calendario se suelte. Antes de guardar se abre una confirmación con destino, período y motivo obligatorio. No hay movimiento visual definitivo hasta que el servidor confirme; una habitación ocupada, bloqueada o sin capacidad no se puede asignar. Sin permiso de modificación no se habilita el arrastre.
+
+Desde la **ficha → Resumen → Habitaciones de la estadía → Cambiar habitación** se realiza la misma operación con botones, también en celular. Para una estadía **Alojada**, se registra un traslado efectivo desde una fecha transcurrida dentro de la estadía en curso hasta la salida. No se admiten fechas futuras, reescribir un traslado posterior ni trasladar una estadía cuya salida ya pasó sin regularizarla primero. Los tramos anteriores se conservan. Por ejemplo, una estadía del 2 al 5 trasladada el 4 ocupa la habitación anterior en `[2,4)` y la nueva en `[4,5)`; el 5 queda libre para otra llegada.
+
+La estadía sigue teniendo un único identificador, cliente, grupo, cuenta de consumos y cobros. Se conserva exactamente su precio acordado y el detalle tarifario guardado, aunque cambie el tipo de habitación. El traslado no registra dinero ni devuelve importes. Una diferencia económica debe acordarse y registrarse expresamente desde la edición de condiciones, con los permisos y motivos vigentes.
+
+La habitación de origen de un traslado queda pendiente de limpieza. Mantenimiento se registra expresamente y sigue bloqueando noches; la habitación liberada puede reservarse o bloquearse desde la fecha efectiva del traslado, sin borrar las noches anteriores. Calendario, disponibilidad, resumen del día y listado de cocina usan el plan por fecha. Las comidas se muestran en la habitación del tramo del día; no se administra localización intradiaria por horas.
+
+Los cambios de habitación conservan fecha efectiva, fecha de registro, motivo, observación y responsable de la sesión, y se consultan en Historial. Los cambios concurrentes se validan por versión y la base mantiene una sola asignación por habitación y noche. Al finalizar la estadía se marca para limpieza la última habitación de su plan.
+
+**Pendiente:** cambios generales de llegada/salida de una estadía ya dividida en tramos y regularizaciones posteriores a la salida. La edición común conserva sus fechas y habitaciones para evitar reescribir historia; permite conservar el precio o registrar un precio acordado, pero no recalcular automáticamente tarifas de tipos de habitación mezclados. La revisión del arrastre real con mouse y del flujo móvil debe realizarse antes de publicar.
+
 ## Ficha lateral de reserva
 
 Al seleccionar una reserva, el panel muestra primero habitación, estado, llegada/salida, noches, recordatorio de salida y saldo, cuando el rol permite consultarlo. Las acciones de llegada/salida, cobro y consumo se agrupan debajo; las reservas finalizadas o canceladas no muestran esas acciones.
@@ -204,3 +237,9 @@ La separación entre `admin.copahuehotel.com.ar` y `pruebas.copahuehotel.com.ar`
 Para cambiar una contraseña individual, usá **Usuarios y permisos → Restablecer acceso** con un superadministrador; las sesiones anteriores de esa cuenta se invalidan automáticamente. Conservá `.dev.vars` y su origen. HTTP solo se admite para pruebas en localhost; en un dominio público el acceso exige configurar HTTPS.
 
 Se incluyen fuentes, componentes, migraciones, configuración y lockfile. Se excluyen dependencias instaladas (`node_modules`), base local, compilados, secretos e historial `.git`.
+
+## Criterios visuales compartidos
+
+Los módulos conservan una tipografía y paleta comunes, con espaciados definidos en las variables `--hotel-space-*` y `--hotel-panel-padding` de `app/globals.css`. Los paneles usan 24 px de padding en escritorio y 16 px en móvil; los campos tienen 40 px de alto y los textos de entrada pasan a 16 px en móvil. Las fichas laterales de Clientes y Reservas comparten encabezados y pestañas adaptables. Los historiales separan acción, fecha y responsable, y el componente `Status` conserva el texto del estado junto con su color.
+
+Las tablas se desplazan dentro de su contenedor. Los calendarios mensuales mantienen un ancho mínimo y desplazamiento horizontal en móvil para evitar reducir sus textos a 10 px. Los botones largos pueden ocupar varias líneas. Estas modificaciones visuales no cambian datos, permisos, importes ni circuitos operativos y no requieren migraciones nuevas. Se verificaron ejemplos aislados en Edge a 320, 375, 768 y 1440 px; continúa pendiente la revisión completa de los flujos con el gerente.

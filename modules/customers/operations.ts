@@ -44,15 +44,31 @@ export async function planCustomer(db:D1Database,action:string,input:unknown,add
  else add('INSERT INTO customer_inquiries (id,customer,date,channel,start,end,pax,status,notes,next_action,followup,created,updated,created_by,updated_by) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',crypto.randomUUID(),d.customer,d.date,d.channel,d.start,d.end,d.pax,d.status,d.notes??'',d.nextAction,d.followup,timestamp,timestamp,identity.id,identity.id);
  return {before:old};
 }
-export async function reservationCustomer(db:D1Database,d:{customerId?:string;customer?:typeof customerDetails._output;inquiryId?:string;inquiryVersion?:number;guest:string;phone:string},add:Add,identity:Identity,booking:string,oldBooking?:string){
+type ContactInput={customerId?:string;customer?:typeof customerDetails._output;guest:string;phone:string};
+export type PreparedContact={id:string;name:string;phone:string};
+export async function newReservationContact(db:D1Database,d:ContactInput,add:Add,identity:Identity):Promise<PreparedContact>{
+ if(d.customerId){
+  if(!can(identity,'customers.lookup')&&!can(identity,'customers.view'))throw Error('HOT_FORBIDDEN');
+  const customer=await db.prepare('SELECT id,name,phone FROM customers WHERE id=?').bind(d.customerId).first<PreparedContact>();
+  if(!customer)throw Error('Cliente inexistente.');
+  return customer;
+ }
+ if(!can(identity,'customers.create'))throw Error('HOT_FORBIDDEN');
+ const details=d.customer??customerDetails.parse({name:d.guest,phone:d.phone});
+ await validateDuplicates(db,details);
+ return {id:insertCustomer(add,details,identity),name:details.name,phone:details.phone};
+}
+export async function reservationCustomer(db:D1Database,d:ContactInput & {inquiryId?:string;inquiryVersion?:number},add:Add,identity:Identity,booking:string,oldBooking?:string,prepared?:PreparedContact){
  const link=oldBooking?await db.prepare('SELECT customer,inquiry FROM booking_clients WHERE booking=?').bind(oldBooking).first<{customer:string;inquiry:string|null}>():null;
  let id=d.customerId||link?.customer;
- if(id){
+ if(!oldBooking){
+  const contact=prepared??await newReservationContact(db,d,add,identity);
+  id=contact.id;d.guest=contact.name;d.phone=contact.phone;
+ }else if(id){
   if(d.customerId&&d.customerId!==link?.customer&&!can(identity,'customers.lookup')&&!can(identity,'customers.view'))throw Error('HOT_FORBIDDEN');
   const customer=await db.prepare('SELECT id,name,phone FROM customers WHERE id=?').bind(id).first<Customer>();
   if(!customer)throw Error('Cliente inexistente.');
   // The booking's historic contact is retained. Display reads use the client.
-  if(!oldBooking){d.guest=customer.name;d.phone=customer.phone;}
  }else{
   if(!can(identity,'customers.create'))throw Error('HOT_FORBIDDEN');
   const details=d.customer??customerDetails.parse({name:d.guest,phone:d.phone});

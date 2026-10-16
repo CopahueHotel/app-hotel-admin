@@ -1,3 +1,4 @@
+import { roomAtDate } from '@/modules/reservations/room-plan';
 import type { Booking,HotelData } from '@/lib/hotel-types';
 import { regimeIncludesService } from '@/modules/shared/regimes';
 export const services=['Desayuno','Almuerzo','Cena'] as const;
@@ -24,7 +25,7 @@ export function kitchenRows(data:HotelData,date:string,service:Service):KitchenR
    if(!included&&!plan&&!suspended&&date!==b.end)continue;
    const served=data.meal_services.some(s=>s.guest===g.id&&s.date===date&&s.service===service)||plan?.status==='Servido';
    const legacy=data.sales.filter(s=>s.booking===b.id&&s.date===date&&s.kind==='Incluida'&&(s.service===service||s.service===null)&&!data.meal_services.some(m=>m.sale===s.id));
-   rows.push({key:g.id,booking:b.id,guest:g.id,plan:plan?.id??null,room:String(b.room),name:g.name||`${b.guest} · Persona ${g.position}`,qty:1,regime:b.regime,character:included?'Incluida':plan?'Adicional':date===b.end?'Salida: revisión pendiente':'No incluida en la elección actual',restrictions:g.restrictions,preferences:g.preferences,observation:[g.observation,plan?.observation,suspended?.observation].filter(Boolean).join(' · '),reason:suspended?.reason??'',state:suspended?'Suspendida':served?'Servido':legacy.length?'Servicio histórico sin atribución individual':included||plan?'Pendiente':'Sin confirmar',expected:suspended?0:included||plan?1:0,external:false,version:plan?.version??0});
+   rows.push({key:g.id,booking:b.id,guest:g.id,plan:plan?.id??null,room:String(roomAtDate(data,b,date)),name:g.name||`${b.guest} · Persona ${g.position}`,qty:1,regime:b.regime,character:included?'Incluida':plan?'Adicional':date===b.end?'Salida: revisión pendiente':'No incluida en la elección actual',restrictions:g.restrictions,preferences:g.preferences,observation:[g.observation,plan?.observation,suspended?.observation].filter(Boolean).join(' · '),reason:suspended?.reason??'',state:suspended?'Suspendida':served?'Servido':legacy.length?'Servicio histórico sin atribución individual':included||plan?'Pendiente':'Sin confirmar',expected:suspended?0:included||plan?1:0,external:false,version:plan?.version??0});
   }
  }
  for(const p of data.meal_plans.filter(p=>!p.guest&&p.date===date&&p.service===service&&p.status!=='Cancelada'))rows.push({key:p.id,booking:null,guest:null,plan:p.id,room:'—',name:p.customer,qty:p.qty,regime:'Externo',character:'Adicional',restrictions:'',preferences:'',observation:p.observation,reason:'',state:p.status,expected:p.qty,external:true,version:p.version});

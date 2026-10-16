@@ -2,8 +2,9 @@ import { barterSchema,blockSchema,bookingEditSchema,bookingSchema,prepareTerms,q
 import type { Booking,BookingTerms,Rate } from '@/lib/hotel-types';
 import { planRate } from '@/modules/tariffs/operations';
 import { z } from 'zod';
-import { reservationCustomer } from '@/modules/customers/operations';
+import { reservationCustomer,type PreparedContact } from '@/modules/customers/operations';
 import type { Identity } from '@/modules/access/permissions';
+import type { RoomSegment } from '@/modules/reservations/room-plan';
 
 export const reservationOperations=z.discriminatedUnion('action',[
  z.object({action:z.literal('booking'),data:bookingSchema}),z.object({action:z.literal('bookingEdit'),data:bookingEditSchema}),
@@ -12,7 +13,7 @@ export const reservationOperations=z.discriminatedUnion('action',[
 ]);
 const names=reservationOperations.options.map(s=>s.shape.action.value);
 type Add=(sql:string,...values:unknown[])=>void;
-export async function planReservation(db:D1Database,action:string,input:unknown,add:Add,identity:Identity) {
+export async function planReservation(db:D1Database,action:string,input:unknown,add:Add,identity:Identity,contact?:PreparedContact) {
  if(!names.includes(action as typeof names[number]))return null;
  const op=reservationOperations.parse({action,data:input});
  if(op.action==='rate')return planRate(db,op.data,add);
@@ -37,13 +38,23 @@ export async function planReservation(db:D1Database,action:string,input:unknown,
  if(op.action!=='booking'&&op.action!=='bookingEdit')return null;
  const bookingData=op.data,dates=reservationNights(bookingData.start,bookingData.end);
  if(!dates.length||dates.length>365)throw Error('La salida debe ser posterior a la llegada, hasta 365 noches.');
- const room=await db.prepare('SELECT * FROM rooms WHERE id=?').bind(bookingData.room).first<{id:number;type:string;state:string}>();
- if(!room||room.state==='Fuera de servicio')throw Error('Habitación no disponible por mantenimiento.');
- if(room.type==='Single'&&bookingData.pax>1)throw Error('Una habitación single admite una persona.');
  const key=op.action==='bookingEdit'?op.data.id:crypto.randomUUID();
  const old=op.action==='bookingEdit'?await db.prepare('SELECT * FROM bookings WHERE id=?').bind(key).first<Booking>():null;
+ const plan=old?await db.prepare('SELECT segments,version FROM booking_room_plans WHERE booking=?').bind(key).first<{segments:string;version:number}>():null;
+ const split=!!plan&&JSON.parse(plan.segments).length>1;
+ if(old&&split&&(old.room!==bookingData.room||old.start!==bookingData.start||old.end!==bookingData.end))throw Error('La estadía tiene tramos de habitación. No se pueden reescribir sus fechas o habitación desde la edición general.');
+ if(split&&bookingData.priceMode==='Tarifa')throw Error('Para una estadía con tramos conservá el precio guardado o registrá un precio acordado con explicación.');
+ if(op.action==='bookingEdit'&&plan){
+  const moved=await db.prepare('SELECT id FROM booking_room_moves WHERE booking=? LIMIT 1').bind(key).first();
+  if(op.data.roomVersion!==undefined&&op.data.roomVersion!==plan.version||moved&&op.data.roomVersion===undefined)throw Error('HOT_VERSION');
+  add('UPDATE booking_room_plans SET version=? WHERE booking=?',plan.version+1,key);
+ }
+ const room=await db.prepare('SELECT * FROM rooms WHERE id=?').bind(bookingData.room).first<{id:number;type:string;state:string}>();
+ if(!room||room.state==='Fuera de servicio'&&!split)throw Error('Habitación no disponible por mantenimiento.');
+ if(room.type==='Single'&&bookingData.pax>1)throw Error('Una habitación single admite una persona.');
+ if(split&&bookingData.pax>1){const segments=JSON.parse(plan!.segments) as RoomSegment[];for(const segment of segments)if(await db.prepare("SELECT id FROM rooms WHERE id=? AND type='Single'").bind(segment.room).first())throw Error('Una habitación single de los tramos admite una persona.');}
  if(op.action==='bookingEdit'&&(!old||!['Confirmada','Alojado'].includes(old.status)))throw Error('Solo se pueden editar reservas confirmadas o en curso.');
- const customer=await reservationCustomer(db,bookingData,add,identity,key,old?.id);
+ const customer=await reservationCustomer(db,bookingData,add,identity,key,old?.id,contact);
  if(old){bookingData.guest=old.guest;bookingData.phone=old.phone;}
  if(bookingData.regime==='PC'&&old?.regime!=='PC')throw Error('Pensión completa solo se conserva para reservas históricas.');
  const stored=old?await db.prepare('SELECT * FROM booking_terms WHERE booking=?').bind(key).first<BookingTerms>():null;
@@ -52,7 +63,7 @@ export async function planReservation(db:D1Database,action:string,input:unknown,
  if(old&&bookingData.priceMode==='Conservar'&&(old.room!==bookingData.room||old.start!==bookingData.start||old.end!==bookingData.end||old.regime!==bookingData.regime))throw Error('Al cambiar habitación, fechas o régimen, elegí tarifas o un nuevo precio acordado.');
  const conflict=await db.prepare('SELECT booking FROM room_nights WHERE room=? AND date>=? AND date<? AND booking<>? LIMIT 1').bind(bookingData.room,bookingData.start,bookingData.end,key).first();
  const blocked=await db.prepare('SELECT id FROM room_blocks WHERE room=? AND active=1 AND start<? AND end>? LIMIT 1').bind(bookingData.room,bookingData.end,bookingData.start).first();
- if(conflict||blocked)throw Error('La habitación no está disponible para todas esas noches.');
+ if(!split&&(conflict||blocked))throw Error('La habitación no está disponible para todas esas noches.');
  const rates=(await db.batch([db.prepare('SELECT * FROM room_rates')]))[0].results as Rate[];
  const quote=quoteStay(rates,room.type,bookingData.regime,bookingData.start,bookingData.end);
  if(bookingData.priceMode==='Tarifa'&&bookingData.quoteSnapshot!==undefined&&bookingData.quoteSnapshot!==JSON.stringify(quote.nights))throw Error('HOT_RATE_CHANGED');

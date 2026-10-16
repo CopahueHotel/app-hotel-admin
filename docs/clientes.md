@@ -22,7 +22,7 @@ Desde una ficha: **Nueva consulta**, fecha, canal, llegada/salida solicitadas si
 
 **Convertir en reserva** abre el formulario con el mismo cliente y los datos solicitados. Elegir habitación y completar las condiciones económicas. Al guardarlo, se conserva el vínculo consulta–reserva y se registra la conversión. Dos solicitudes simultáneas no convierten una consulta en dos reservas; la perdedora revierte todos sus cambios. Una consulta convertida mantiene ese estado histórico, aunque la reserva se cancele después.
 
-El formulario actual de reserva admite hasta dos personas y una habitación. Una consulta puede expresar un grupo mayor, pero la conversión automática de ese grupo queda deshabilitada; no se inventa un circuito de reservas múltiples.
+El formulario individual de reserva admite hasta dos personas y una habitación. Para un grupo mayor está disponible **Reservas → Grupos → Nuevo grupo**, seleccionando el mismo cliente. La conversión vinculada directamente desde una consulta a varias habitaciones sigue pendiente: crear el grupo por separado no marca esa consulta como convertida automáticamente.
 
 ## Exportación y consentimiento
 
@@ -42,4 +42,4 @@ Gerente y Recepción reciben permisos iniciales del módulo cuando sus roles aú
 
 Las reservas, huéspedes, consumos, cobros, pagos, tarifas y sus condiciones guardadas no se recalculan ni se borran. Los clientes creados desde ahora identifican al usuario autenticado. No hay eliminación pública de fichas ni consultas; los estados y cambios conservan historial.
 
-Pendientes: revisión operativa/visual con el gerente, conciliación manual de posibles fichas históricas duplicadas, reservas de grupos y eventual integración con el historial de correos. Esta etapa no incorpora fusión, campañas ni Zoho CRM.
+Pendientes: revisión operativa/visual con el gerente, conciliación manual de posibles fichas históricas duplicadas, conversión de consultas a grupos y eventual integración con el historial de correos. Esta etapa no incorpora fusión, campañas ni Zoho CRM.

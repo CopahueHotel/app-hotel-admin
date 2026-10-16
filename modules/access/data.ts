@@ -1,7 +1,7 @@
 import { accessGuard } from '@/lib/hotel-auth';
 import type { HotelData } from '@/lib/hotel-types';
 import { can,type Identity } from '@/modules/access/permissions';
-export const hotelTables=['booking_clients','rooms','bookings','products','stock_movements','sales','expenses','cash_movements','daily_closes','settings','meal_overrides','audit_log','room_rates','booking_terms','room_blocks','booking_guests','meal_suspensions','meal_services','meal_plans','beverage_accounts','beverage_dispatches','beverage_settlements','beverage_transfers','beverage_returns','beverage_corrections','purchase_documents','purchase_lines','purchase_receipts','supplier_payment_details','suppliers','supplier_deliveries','menu_plans','menu_actuals'] as const;
+export const hotelTables=['booking_room_plans','booking_room_moves','reservation_groups','group_bookings','booking_clients','rooms','bookings','products','stock_movements','sales','expenses','cash_movements','daily_closes','settings','meal_overrides','audit_log','room_rates','booking_terms','room_blocks','booking_guests','meal_suspensions','meal_services','meal_plans','beverage_accounts','beverage_dispatches','beverage_settlements','beverage_transfers','beverage_returns','beverage_corrections','purchase_documents','purchase_lines','purchase_receipts','supplier_payment_details','suppliers','supplier_deliveries','menu_plans','menu_actuals'] as const;
 export async function readHotelData(db:D1Database,identity:Identity){
  const has=(p:string)=>can(identity,p),reservation=has('reservations.view'),restaurant=has('restaurant.view'),food=has('meals.view')||has('menu.view')||restaurant;
  const financial=has('cash.view')||has('reports.view'),bookingMoney=reservation&&has('reservations.balance'),purchaseMoney=has('purchases.view')&&has('purchases.financial');
@@ -10,8 +10,11 @@ export async function readHotelData(db:D1Database,identity:Identity){
   queries.rooms=reservation||has('rooms.view')?'SELECT * FROM rooms':'SELECT id,type FROM rooms';
   queries.bookings=reservation?(bookingMoney?'SELECT * FROM bookings':'SELECT id,guest,phone,room,start,end,pax,regime,meal,status,source,note FROM bookings'):'SELECT id,guest,room,start,end,pax,regime,meal,status FROM bookings';
  }
+ if(reservation||has('rooms.view')){queries.reservation_groups=reservation?'SELECT * FROM reservation_groups':'SELECT id,name FROM reservation_groups';queries.group_bookings='SELECT * FROM group_bookings';}
  if(has('rooms.view'))queries.room_blocks='SELECT * FROM room_blocks';
  if(reservation)queries.booking_clients='SELECT booking,customer,NULL AS inquiry FROM booking_clients';
+ if(queries.bookings)queries.booking_room_plans='SELECT * FROM booking_room_plans';
+ if(reservation)queries.booking_room_moves='SELECT * FROM booking_room_moves';
  if(queries.bookings){
   const cols=reservation?['id','guest','phone','room','start','end','pax','regime','meal',...(bookingMoney?['amount']:[]),'status','source','note']:['id','guest','room','start','end','pax','regime','meal','status'];
   queries.bookings='SELECT '+cols.map(col=>col==='guest'?'COALESCE(c.name,b.guest) AS guest':col==='phone'?'COALESCE(c.phone,b.phone) AS phone':'b.'+col).join(',')+' FROM bookings b LEFT JOIN booking_clients l ON l.booking=b.id LEFT JOIN customers c ON c.id=l.customer';
@@ -49,10 +52,11 @@ export async function readHotelData(db:D1Database,identity:Identity){
  // Audit detail can contain prices, contacts and internal notes. Fetch histories
  // only for authorized domains and never include staff/user events here.
  const allowed:string[]=[];
+ if(reservation)allowed.push('roomMove');
  if(has('meals.view'))allowed.push('guestProfile','meal','mealSuspend','mealServe','mealPlan','mealPlanStatus');
  if(has('menu.view'))allowed.push('menuPlan','menuCopy','menuActual');
  if(has('suppliers.view'))allowed.push('supplierProfile','deliveryGenerate','deliveryEdit');
- if(bookingMoney)allowed.push('booking','bookingEdit','barter','status','payment');
+ if(bookingMoney)allowed.push('groupCreate','groupSave','groupMembers','booking','bookingEdit','barter','status','payment');
  if(has('tariffs.view'))allowed.push('rate');
  if(has('rooms.view'))allowed.push('block','unblock','room');
  if(restaurant&&has('restaurant.prices'))allowed.push('sale','beverageAccount','beverageDispatch','beverageSettle','beverageReturn','beverageCorrect');

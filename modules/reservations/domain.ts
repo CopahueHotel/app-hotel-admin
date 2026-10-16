@@ -24,7 +24,7 @@ export const bookingSchema=z.object({
  pax:z.coerce.number().int().min(1).max(2),regime:z.enum(supportedRegimes),meal:z.enum(['Cena','Almuerzo']),
  source:text,note,customerId:z.string().default(''),customer:customerDetails.optional(),inquiryId:z.string().default(''),inquiryVersion:z.coerce.number().int().nonnegative().optional(),...economics,
 });
-export const bookingEditSchema=bookingSchema.extend({id:text,version:z.coerce.number().int().nonnegative()});
+export const bookingEditSchema=bookingSchema.extend({id:text,version:z.coerce.number().int().nonnegative(),roomVersion:z.coerce.number().int().nonnegative().optional()});
 
 export const blockSchema=z.object({room:z.coerce.number().int(),start:validDate,end:validDate,reason:text,responsible:text});
 export const unblockSchema=z.object({id:text,reason:text,responsible:text});

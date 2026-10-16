@@ -68,7 +68,7 @@ test('lookup can support reservations without full module access; internal notes
 });
 test('migration preserves bookings and financial history and never merges identical historical names or contacts',t=>{
  const db=new DatabaseSync(':memory:');t.after(()=>db.close());
- for(const file of readdirSync('drizzle').filter(f=>f.endsWith('.sql')&&!f.startsWith('0012')).sort())db.exec(readFileSync('drizzle/'+file,'utf8'));
+ for(const file of readdirSync('drizzle').filter(f=>f.endsWith('.sql')&&f<'0012').sort())db.exec(readFileSync('drizzle/'+file,'utf8'));
  db.exec("INSERT INTO rooms VALUES (90,'Doble','Limpia',''); INSERT INTO bookings VALUES ('a','Same name','+54 11 1234',90,'2026-11-01','2026-11-03',1,'Desayuno','Cena',10000,'Confirmada','Booking','Stay A'); INSERT INTO bookings VALUES ('b','Same name','+54 11 1234',90,'2026-11-03','2026-11-05',1,'Desayuno','Cena',20000,'Confirmada','Booking','Stay B'); INSERT INTO booking_terms (booking,base_amount) VALUES ('a',10000),('b',20000); UPDATE roles SET permissions='[\"panel.view\"]',version=1 WHERE id='reception';");
  const before=db.prepare('SELECT * FROM bookings ORDER BY id').all(),prices=db.prepare('SELECT * FROM booking_terms ORDER BY booking').all();
  db.exec(readFileSync('drizzle/0012_magenta_runaways.sql','utf8'));

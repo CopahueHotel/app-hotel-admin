@@ -1,6 +1,7 @@
 'use client';
 
 import { Input } from '@/components/ui/input';
+import { Status } from '@/modules/shared/hotel-ui';
 import { kitchenRows,kitchenTotals,services,type Service } from '@/lib/hotel-meals';
 import { monthDates,shiftDate } from '@/lib/hotel-planning';
 import type { HotelData } from '@/lib/hotel-types';
@@ -9,7 +10,7 @@ import { Choice,download,Field,Form,History,MonthCalendar,Props,Text } from '@/m
 import { useState } from 'react';
 export function MenuDailySummary({data,date,service}:{data:HotelData;date:string;service:Service}){
  const menu=data.menu_plans?.find(m=>m.date===date&&m.service===service),actual=data.menu_actuals?.find(m=>m.plan===menu?.id);
- return <div className="menu-summary"><b>Menú previsto · {service}: {menu?.status??'Sin planificar'}</b><p>{menu?.dishes??'No hay platos cargados para este servicio.'}</p>{menu&&<><p>Alternativas declaradas: {menu.alternatives||'Sin registrar'}</p><p>Condiciones indicadas: {menu.conditions||'Sin registrar'}</p><p>{menu.observation} · {menu.responsible}</p></>}{actual&&<><b>Menú efectivamente servido</b><p>{actual.dishes}</p><p>Alternativas: {actual.alternatives||'Sin registrar'} · Condiciones: {actual.conditions||'Sin registrar'}</p><p>{actual.observation} · {actual.responsible}</p></>}<small>Los nombres de los platos no determinan si son aptos para una restricción.</small></div>;
+ return <div className="menu-summary"><b>Menú previsto · {service}: </b><Status value={menu?.status??'Sin planificar'}/><p>{menu?.dishes??'No hay platos cargados para este servicio.'}</p>{menu&&<><p>Alternativas declaradas: {menu.alternatives||'Sin registrar'}</p><p>Condiciones indicadas: {menu.conditions||'Sin registrar'}</p><p>{menu.observation} · {menu.responsible}</p></>}{actual&&<><b>Menú efectivamente servido</b><p>{actual.dishes}</p><p>Alternativas: {actual.alternatives||'Sin registrar'} · Condiciones: {actual.conditions||'Sin registrar'}</p><p>{actual.observation} · {actual.responsible}</p></>}<small>Los nombres de los platos no determinan si son aptos para una restricción.</small></div>;
 }
 export function MenuPlanner({data,date,onSave}:Props){
  const [selection,setSelection]=useState<{base:string;day:string}|null>(null),day=selection?.base===date?selection.day:date;

@@ -60,3 +60,15 @@ export const customerInquiries=sqliteTable('customer_inquiries',{
 export const bookingClients=sqliteTable('booking_clients',{
  booking:text('booking').primaryKey().references(()=>bookings.id),customer:text('customer').notNull().references(()=>customers.id),inquiry:text('inquiry').references(()=>customerInquiries.id),
 },t=>[uniqueIndex('idx_inquiry_booking').on(t.inquiry),index('idx_booking_customer').on(t.customer)]);
+export const reservationGroups=sqliteTable('reservation_groups',{
+ id:text('id').primaryKey(),name:text('name').notNull(),customer:text('customer').notNull().references(()=>customers.id),pax:integer('pax').notNull(),note:text('note').notNull().default(''),created:text('created').notNull(),updated:text('updated').notNull(),created_by:text('created_by').notNull().references(()=>users.id),updated_by:text('updated_by').notNull().references(()=>users.id),version:integer('version').notNull().default(0),
+});
+export const groupBookings=sqliteTable('group_bookings',{
+ booking:text('booking').primaryKey().references(()=>bookings.id),group_id:text('group_id').notNull().references(()=>reservationGroups.id),active:integer('active').notNull().default(1),
+},t=>[index('idx_group_members').on(t.group_id,t.active)]);
+export const bookingRoomPlans=sqliteTable('booking_room_plans',{
+ booking:text('booking').primaryKey().references(()=>bookings.id),segments:text('segments').notNull(),version:integer('version').notNull().default(0),
+});
+export const bookingRoomMoves=sqliteTable('booking_room_moves',{
+ id:text('id').primaryKey(),booking:text('booking').notNull().references(()=>bookings.id),date:text('date').notNull(),from_room:integer('from_room').notNull().references(()=>rooms.id),to_room:integer('to_room').notNull().references(()=>rooms.id),mode:text('mode').notNull(),reason:text('reason').notNull(),observation:text('observation').notNull().default(''),actor:text('actor').notNull(),actor_id:text('actor_id').notNull().references(()=>users.id),created:text('created').notNull(),version:integer('version').notNull(),
+},t=>[index('idx_room_move_booking').on(t.booking,t.created)]);

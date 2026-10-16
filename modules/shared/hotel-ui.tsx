@@ -15,4 +15,10 @@ export function Field({label,name,type='text',value,required=true,step,min,...pr
 export function Choice({label,...props}:ComponentProps<typeof Pick> & {label:string}){return <label className="field"><span>{label}</span><Pick {...props}/></label>}
 export function Tick({name,label,initial=false}:{name:string;label:string;initial?:boolean}){const[v,set]=useState(initial);return <label className="tick"><Checkbox checked={v} onCheckedChange={x=>set(x===true)}/><input name={name} type="hidden" value={String(v)}/>{label}</label>}
 export function DataTable({heads,rows,empty='No hay registros para mostrar.'}:{heads:string[];rows:ReactNode[][];empty?:string}){return <div className="table-wrap"><Table><TableHeader><TableRow>{heads.map((h:string)=><TableHead key={h}>{h}</TableHead>)}</TableRow></TableHeader><TableBody>{rows.length?rows.map((r:ReactNode[],i:number)=><TableRow key={i}>{r.map((c,j)=><TableCell key={j}>{c}</TableCell>)}</TableRow>):<TableRow><TableCell colSpan={heads.length} className="empty-cell">{empty}</TableCell></TableRow>}</TableBody></Table></div>}
-export function Status({value}:{value:string}){return <span className={'tag '+(value==='Alojado'||value==='Limpia'?'green':value==='Cancelada'||value==='Fuera de servicio'?'red':value==='Finalizada'?'gray':'blue')}>{value}</span>}
+export function Status({value}:{value:string}){
+ const tone=['Alojado','Limpia','Activo','Realizada','Servido','Resuelto','Confirmado','Pagado','Asistencia registrada'].includes(value)?'green'
+  :['Cancelada','Cancelado','Fuera de servicio','Ausente','Vencido','Suspendida'].includes(value)?'red'
+  :['Pendiente','Pendiente de limpieza','Reprogramada','Parcialmente pagado','Abierta','Nueva consulta','Pendiente de respuesta','Pendiente de seña','Presupuesto enviado'].includes(value)?'amber'
+  :['Finalizada','Inactivo','Borrador','Cerrada sin reserva','Sin información','Sin planificar','Cerrada','Sin registrar'].includes(value)?'gray':'blue';
+ return <span className={'tag '+tone}>{value}</span>;
+}
