@@ -1,3 +1,4 @@
+import { extraBedSchema } from '@/modules/reservations/extra-bed';
 import { initialPaymentSchema } from '@/modules/cash/initial-payment';
 import type { BookingTerms } from '@/lib/hotel-types';
 import { exactMoney,validDate } from '@/modules/shared/validation';
@@ -21,8 +22,8 @@ const economics={
  quoteSnapshot:z.string().max(100000).optional(),
 };
 export const bookingSchema=z.object({
- deposit:initialPaymentSchema.optional(),guest:z.string().trim().max(240).default(''),phone:z.string().max(240).default(''),room:z.coerce.number().int(),start:validDate,end:validDate,
- pax:z.coerce.number().int().min(1).max(2),regime:z.enum(supportedRegimes),meal:z.enum(['Cena','Almuerzo']),
+ extraBed:extraBedSchema.optional(),removeExtraBed:z.boolean().default(false),deposit:initialPaymentSchema.optional(),guest:z.string().trim().max(240).default(''),phone:z.string().max(240).default(''),room:z.coerce.number().int(),start:validDate,end:validDate,
+ pax:z.coerce.number().int().min(1).max(3),regime:z.enum(supportedRegimes),meal:z.enum(['Cena','Almuerzo']),
  source:text,note,customerId:z.string().default(''),customer:customerDetails.optional(),inquiryId:z.string().default(''),inquiryVersion:z.coerce.number().int().nonnegative().optional(),...economics,
 });
 export const bookingEditSchema=bookingSchema.extend({id:text,version:z.coerce.number().int().nonnegative(),roomVersion:z.coerce.number().int().nonnegative().optional()});
@@ -41,7 +42,7 @@ export function discountCents(base:number,type:string,value:number,benefit:strin
  if(result>base)throw Error('El descuento supera el precio base.');
  return result;
 }
-export function prepareTerms(d:z.infer<typeof bookingSchema>,quote:ReturnType<typeof quoteStay>,previous?:BookingTerms|null) {
+export function prepareTerms(d:z.infer<typeof bookingSchema>,quote:ReturnType<typeof quoteStay>,previous?:BookingTerms|null,extraBedAmount=0) {
  let base:number,snapshot:string,tariff:number|null,mode:string;
  if(d.priceMode==='Conservar'){
   if(!previous)throw Error('No hay un precio anterior para conservar.');
@@ -51,7 +52,8 @@ export function prepareTerms(d:z.infer<typeof bookingSchema>,quote:ReturnType<ty
  }else{
   if(d.priceMode==='Tarifa'&&quote.total===null)throw Error('Faltan tarifas para algunas noches. Registrá un precio acordado con explicación.');
   if(d.priceMode==='Acordado'&&d.amount===undefined)throw Error('Ingresá el precio acordado antes del descuento.');
-  base=d.priceMode==='Tarifa'?quote.total!:Math.round(d.amount!*100);
+  base=(d.priceMode==='Tarifa'?quote.total!:Math.round(d.amount!*100))+extraBedAmount;
+  if(base>10000000000)throw Error('El total de alojamiento y cama extra supera el importe permitido.');
   snapshot=JSON.stringify(quote.nights);tariff=quote.total;mode=d.priceMode;
  }
  const discount=d.priceMode==='Conservar'?previous!.discount_amount:discountCents(base,d.discountType,d.discountValue,d.benefit);

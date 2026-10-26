@@ -42,7 +42,7 @@ export function operationPermissions(action:string,d:Record<string,unknown>):str
  const result=[...required];
  if(['booking','bookingEdit'].includes(action)){
   if(action==='booking'&&d.deposit)result.push('reservations.collect');
-  if(d.priceMode==='Acordado')result.push('reservations.price');
+  if(d.priceMode==='Acordado'||d.extraBed||d.removeExtraBed)result.push('reservations.price');
   if(d.priceMode!=='Conservar'&&d.discountType&&d.discountType!=='Ninguno')result.push('reservations.discount');
   if(d.priceMode!=='Conservar'&&d.benefit&&d.benefit!=='Habitual')result.push('reservations.special');
  }

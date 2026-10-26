@@ -1,3 +1,4 @@
+import { roomCapacity } from '@/modules/reservations/extra-bed';
 import { z } from 'zod';
 import { validDate } from '@/modules/shared/validation';
 import { hotelDate } from '@/modules/meals/domain';
@@ -22,7 +23,8 @@ export async function planRoomMove(db:D1Database,action:string,input:unknown,add
  if(source===d.room)throw Error('Elegí una habitación diferente.');
  const target=await db.prepare('SELECT * FROM rooms WHERE id=?').bind(d.room).first<{type:string;state:string}>();
  if(!target||target.state==='Fuera de servicio')throw Error('La habitación de destino no está disponible por mantenimiento.');
- if(target.type==='Single'&&booking.pax>1)throw Error('Una habitación single admite una persona.');
+ const bed=await db.prepare('SELECT booking FROM booking_extra_beds WHERE booking=?').bind(booking.id).first();
+ if(booking.pax>roomCapacity(target.type,!!bed)||bed&&target.type==='Single')throw Error('La habitación de destino no admite la ocupación y cama extra solicitadas.');
  const occupied=await db.prepare('SELECT booking FROM room_nights WHERE room=? AND date>=? AND date<? AND booking<>? LIMIT 1').bind(d.room,date,booking.end,booking.id).first();
  const blocked=await db.prepare('SELECT id FROM room_blocks WHERE room=? AND active=1 AND start<? AND end>? LIMIT 1').bind(d.room,booking.end,date).first();
  if(occupied||blocked)throw Error('La habitación de destino no está disponible para todas esas noches.');

@@ -1,3 +1,6 @@
+import { extraBedPrice,roomCapacity } from '@/modules/reservations/extra-bed';
+import { can } from '@/modules/access/permissions';
+import type { HotelTables } from '@/lib/hotel-types';
 import { appendInitialPayment } from '@/modules/cash/initial-payment';
 import { barterSchema,blockSchema,bookingEditSchema,bookingSchema,prepareTerms,quoteStay,rateSchema,reservationNights,unblockSchema } from '@/lib/hotel-reservations';
 import type { Booking,BookingTerms,Rate } from '@/lib/hotel-types';
@@ -43,6 +46,13 @@ export async function planReservation(db:D1Database,action:string,input:unknown,
  const old=op.action==='bookingEdit'?await db.prepare('SELECT * FROM bookings WHERE id=?').bind(key).first<Booking>():null;
  const plan=old?await db.prepare('SELECT segments,version FROM booking_room_plans WHERE booking=?').bind(key).first<{segments:string;version:number}>():null;
  const split=!!plan&&JSON.parse(plan.segments).length>1;
+ const oldBed=old?await db.prepare('SELECT * FROM booking_extra_beds WHERE booking=?').bind(key).first<HotelTables['booking_extra_beds']>():null;
+ if(bookingData.extraBed&&bookingData.removeExtraBed)throw Error('Elegí solicitar o quitar la cama extra.');
+ const bed=bookingData.removeExtraBed?null:bookingData.extraBed??(oldBed?{mode:oldBed.mode as 'Noche'|'Total',value:oldBed.value/100,reason:oldBed.reason}:null);
+ const bedAmount=bed?extraBedPrice(bed,bookingData.start,bookingData.end):null;
+ const bedChanged=!!oldBed!==!!bed||(!!oldBed&&!!bed&&(oldBed.mode!==bed.mode||oldBed.value!==bedAmount!.value||oldBed.total!==bedAmount!.total||oldBed.reason!==bed.reason));
+ if(old&&bedChanged&&bookingData.priceMode==='Conservar')throw Error('Para cambiar la cama extra elegí tarifas o un nuevo precio acordado.');
+ if((bedChanged||!old&&bed)&&!can(identity,'reservations.price'))throw Error('HOT_FORBIDDEN');
  if(old&&split&&(old.room!==bookingData.room||old.start!==bookingData.start||old.end!==bookingData.end))throw Error('La estadía tiene tramos de habitación. No se pueden reescribir sus fechas o habitación desde la edición general.');
  if(split&&bookingData.priceMode==='Tarifa')throw Error('Para una estadía con tramos conservá el precio guardado o registrá un precio acordado con explicación.');
  if(op.action==='bookingEdit'&&plan){
@@ -52,7 +62,8 @@ export async function planReservation(db:D1Database,action:string,input:unknown,
  }
  const room=await db.prepare('SELECT * FROM rooms WHERE id=?').bind(bookingData.room).first<{id:number;type:string;state:string}>();
  if(!room||room.state==='Fuera de servicio'&&!split)throw Error('Habitación no disponible por mantenimiento.');
- if(room.type==='Single'&&bookingData.pax>1)throw Error('Una habitación single admite una persona.');
+ if(bookingData.pax>roomCapacity(room.type,!!bed))throw Error(room.type==='Single'?'Una habitación single admite una persona.':'Para tres personas hay que solicitar expresamente una cama extra.');
+ if(bed&&room.type==='Single')throw Error('La cama extra se habilita en habitaciones dobles.');
  if(split&&bookingData.pax>1){const segments=JSON.parse(plan!.segments) as RoomSegment[];for(const segment of segments)if(await db.prepare("SELECT id FROM rooms WHERE id=? AND type='Single'").bind(segment.room).first())throw Error('Una habitación single de los tramos admite una persona.');}
  if(op.action==='bookingEdit'&&(!old||!['Confirmada','Alojado'].includes(old.status)))throw Error('Solo se pueden editar reservas confirmadas o en curso.');
  const customer=await reservationCustomer(db,bookingData,add,identity,key,old?.id,contact);
@@ -67,13 +78,19 @@ export async function planReservation(db:D1Database,action:string,input:unknown,
  const rates=(await db.batch([db.prepare('SELECT * FROM room_rates')]))[0].results as Rate[];
  const quote=quoteStay(rates,room.type,bookingData.regime,bookingData.start,bookingData.end);
  if(bookingData.priceMode==='Tarifa'&&bookingData.quoteSnapshot!==undefined&&bookingData.quoteSnapshot!==JSON.stringify(quote.nights))throw Error('HOT_RATE_CHANGED');
- const priced=prepareTerms(bookingData,quote,previous);
+ const priced=prepareTerms(bookingData,quote,previous,bedAmount?.total??0);
+ if(bed&&(!oldBed||bedChanged)){
+  const now=new Date().toISOString();
+  if(oldBed)add('UPDATE booking_extra_beds SET mode=?,value=?,total=?,reason=?,actor=?,updated=?,version=? WHERE booking=?',bed.mode,bedAmount!.value,bedAmount!.total,bed.reason,identity.name,now,oldBed.version+1,key);
+  else add('INSERT INTO booking_extra_beds (booking,mode,value,total,reason,actor,created,updated,version) VALUES (?,?,?,?,?,?,?,?,0)',key,bed.mode,bedAmount!.value,bedAmount!.total,bed.reason,identity.name,now,now);
+ }
  if(!old)add('INSERT INTO bookings (id,guest,phone,room,start,end,pax,regime,meal,amount,status,source,note) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)',key,bookingData.guest,bookingData.phone,bookingData.room,bookingData.start,bookingData.end,bookingData.pax,bookingData.regime,bookingData.meal,priced.amount,'Confirmada',bookingData.source,bookingData.note);
  customer.finish();
  const version=op.action==='bookingEdit'?op.data.version+1:0;
  const columns=['booking',...Object.keys(priced.terms),'version'];
  add(`INSERT INTO booking_terms (${columns.join(',')}) VALUES (${columns.map(()=>'?').join(',')}) ON CONFLICT(booking) DO UPDATE SET ${columns.slice(1).map(c=>`${c}=excluded.${c}`).join(',')}`,key,...Object.values(priced.terms),version);
  if(old)add('UPDATE bookings SET guest=?,phone=?,room=?,start=?,end=?,pax=?,regime=?,meal=?,amount=?,source=?,note=? WHERE id=?',bookingData.guest,bookingData.phone,bookingData.room,bookingData.start,bookingData.end,bookingData.pax,bookingData.regime,bookingData.meal,priced.amount,bookingData.source,bookingData.note,key);
+ if(oldBed&&!bed)add('DELETE FROM booking_extra_beds WHERE booking=?',key);
  if(bookingData.deposit){if(old)throw Error('Registrá nuevos cobros desde la cuenta de la reserva.');appendInitialPayment(add,key,'Seña · '+bookingData.guest,bookingData.deposit,priced.amount,identity.name);}
- return {before:old?{booking:old,terms:previous}:undefined,after:{booking:key,customer:customer.id,inquiry:bookingData.inquiryId||null,...priced}};
+ return {before:old?{booking:old,terms:previous,extraBed:oldBed}:undefined,after:{booking:key,customer:customer.id,inquiry:bookingData.inquiryId||null,extraBed:bed?{...bed,...bedAmount}:null,...priced}};
 }

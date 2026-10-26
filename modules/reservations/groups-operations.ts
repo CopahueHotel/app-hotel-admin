@@ -64,7 +64,7 @@ export async function planGroup(db:D1Database,action:string,input:unknown,add:Ad
   total+=change.after.amount;bookings.push(booking);
   add('INSERT INTO group_bookings (booking,group_id,active) VALUES (?,?,1)',booking,id);
  }
- if(pricing)add('INSERT INTO group_prices VALUES (?,?,?,?,?,?,?,?)',id,op.data.pricing!.mode,Math.round(op.data.pricing!.value*100),pricing.units,pricing.total,op.data.pricing!.reason,identity.name,timestamp);
+ if(pricing)add('INSERT INTO group_prices VALUES (?,?,?,?,?,?,?,?)',id,op.data.pricing!.mode,Math.round(op.data.pricing!.value*100),pricing.units,total,op.data.pricing!.reason,identity.name,timestamp);
  if(op.data.deposit)appendInitialPayment(add,id,'Seña de grupo · '+d.name,op.data.deposit,total,identity.name);
  return {after:{group:id,bookings}};
 }

@@ -22,7 +22,7 @@ Desde una ficha: **Nueva consulta**, fecha, canal, llegada/salida solicitadas si
 
 **Convertir en reserva** abre el formulario con el mismo cliente y los datos solicitados. Elegir habitación y completar las condiciones económicas. Al guardarlo, se conserva el vínculo consulta–reserva y se registra la conversión. Dos solicitudes simultáneas no convierten una consulta en dos reservas; la perdedora revierte todos sus cambios. Una consulta convertida mantiene ese estado histórico, aunque la reserva se cancele después.
 
-El formulario individual de reserva admite hasta dos personas y una habitación. Para un grupo mayor está disponible **Reservas → Grupos → Nuevo grupo**, seleccionando el mismo cliente. La conversión vinculada directamente desde una consulta a varias habitaciones sigue pendiente: crear el grupo por separado no marca esa consulta como convertida automáticamente.
+El formulario individual de reserva admite una habitación y hasta tres personas si se solicita expresamente una cama extra en una habitación doble. Para un grupo mayor está disponible **Reservas → Grupos → Nuevo grupo**, seleccionando el mismo cliente. La conversión vinculada directamente desde una consulta a varias habitaciones sigue pendiente: crear el grupo por separado no marca esa consulta como convertida automáticamente.
 
 ## Exportación y consentimiento
 

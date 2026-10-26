@@ -2,6 +2,16 @@
 
 Los comandos se ejecutan desde la raíz del proyecto. Ver [inicio rápido](../README.md), [alcance y pendientes](../ALCANCE.md) y [respaldos automáticos](respaldos.md).
 
+## Cama extra solicitada
+
+En una habitación doble, marcar **Solicitar una cama extra** permite alojar hasta tres personas. No cambia automáticamente la cantidad de huéspedes: completala expresamente. Se admite una cama extra por reserva; las habitaciones Single conservan su capacidad anterior. Confirmar físicamente la disponibilidad con el hotel: no se administra un inventario de camas extra.
+
+El adicional se acuerda **Por noche** o como **Total de la estadía**, con importe en ARS y explicación obligatoria. Para tres noches, un adicional por noche se aplica tres veces. El importe se suma a la base de alojamiento y participa del descuento que se aplique a esa base; no genera un cobro automático. Si ya está incluido en el acuerdo, registrar **0** y explicarlo para evitar sumarlo dos veces. En grupos, la tarifa por persona cuenta también al tercer huésped; la cama es un adicional separado, que puede estar incluido en cero. El total guardado del grupo incluye los adicionales.
+
+En una reserva existente, **Conservar** mantiene el acuerdo de cama extra. Para agregarla, quitarla o modificar su precio hay que elegir tarifas o un nuevo precio acordado y contar con permiso de precios. Los cobros y consumos anteriores siguen protegidos. Los grupos con contrato común o cobros mantienen sus reglas de regularización: no se cambia su contrato individualmente. La solicitud corresponde a la estadía completa; cambiar la composición de huéspedes a mitad de una estadía con servicios ya registrados requiere regularización.
+
+La tercera persona tiene ficha alimentaria independiente y se incluye según su régimen. Calendario y ficha muestran la cama solicitada. Los traslados conservan el precio y la solicitud y advierten que debe prepararse la cama en el destino. La migración `0017_slippery_the_liberteens` agrega acuerdos vacíos, mantiene datos y precios anteriores y conserva una referencia diferida necesaria para guardar cama y reserva en el mismo batch.
+
 ## Seña al crear una reserva
 
 En una reserva individual o un grupo nuevo, marcar **Registrar seña recibida ahora**, completar la fecha real, importe aplicado en ARS y medio/moneda. Requiere permiso de cobro. Reserva y seña se guardan en el mismo batch; un fallo de disponibilidad, precio, saldo o vuelto revierte todo. En grupos, el cobro pertenece a la cuenta común.

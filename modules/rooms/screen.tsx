@@ -1,4 +1,5 @@
 'use client';
+import { bedForBooking,roomCapacity } from '@/modules/reservations/extra-bed';
 
 import type { Booking,HotelData,RoomBlock } from '@/lib/hotel-types';
 import type { EntryForm } from '@/modules/shared/hotel-ui';
@@ -24,7 +25,7 @@ export function CalendarScreen({data,open,setCalendar,calendar,date,rooms,blockF
      const blocked=blockFor(room.id,day),booking=active.find(item=>item.start<=day&&day<item.end&&roomAtDate(data,item,day)===room.id);
      const segment=booking?roomSegments(data,booking).find(item=>item.start<=day&&day<item.end):undefined;
      const draggable=mayMove&&booking?.status==='Confirmada'&&roomSegments(data,booking).length===1;
-     const dropFree=draggedBooking&&!roomUnavailable(data,room.id,draggedBooking.start,draggedBooking.end,draggedBooking.id)&&(room.type!=='Single'||draggedBooking.pax===1);
+     const dropFree=draggedBooking&&!roomUnavailable(data,room.id,draggedBooking.start,draggedBooking.end,draggedBooking.id)&&draggedBooking.pax<=roomCapacity(room.type,!!bedForBooking(data,draggedBooking.id))&&!(room.type==='Single'&&bedForBooking(data,draggedBooking.id));
      const group=booking?groupForBooking(data,booking.id):undefined;
      return <button key={day} draggable={draggable} className={'calendar-cell '+(day===date?'today':'')+(booking?' booked '+(booking.status==='Alojado'?'green':booking.status==='Finalizada'?'gray':'blue'):'')+((room.state==='Fuera de servicio'||blocked)&&!booking?' unavailable':'')+(draggedBooking?(dropFree?' drop-available':' drop-unavailable'):'')}
       title={booking?`${group?'Grupo: '+group.name+' · ':''}${booking.guest} · ${booking.regime} · Hab. ${room.id} · ${fmt(segment?.start??booking.start)} a ${fmt(segment?.end??booking.end)}${draggable?' · Arrastrar para cambiar habitación sin cambiar fechas':''}`:`Habitación ${room.id} · ${fmt(day)} · ${room.state}`}
@@ -33,7 +34,7 @@ export function CalendarScreen({data,open,setCalendar,calendar,date,rooms,blockF
       onDragEnd={()=>{setDragged(null);suppressClick.current=performance.now()+300;}}
       onDragOver={event=>{if(mayMove&&draggedBooking){event.preventDefault();event.dataTransfer.dropEffect='move';}}}
       onDrop={event=>{event.preventDefault();const id=event.dataTransfer.getData('application/x-hotel-booking'),source=active.find(item=>item.id===id);setDragged(null);suppressClick.current=performance.now()+300;if(mayMove&&source?.status==='Confirmada'&&roomSegments(data,source).length===1&&roomAtDate(data,source,source.start)!==room.id)onMove?.(source.id,room.id);}}
-     >{booking&&(index===0||segment?.start===day)?<span>{group?.name??booking.guest.split(' ')[0]}<small>{booking.regime}</small></span>:!booking&&(room.state==='Fuera de servicio'||blocked)?<span>Mantenimiento</span>:null}</button>;
+     >{booking&&(index===0||segment?.start===day)?<span>{group?.name??booking.guest.split(' ')[0]}<small>{booking.regime}{bedForBooking(data,booking.id)&&' · cama extra'}</small></span>:!booking&&(room.state==='Fuera de servicio'||blocked)?<span>Mantenimiento</span>:null}</button>;
     })}
    </div>)}
   </div></div>
