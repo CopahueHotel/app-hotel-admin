@@ -20,7 +20,7 @@ test('reservation form shows rate units, missing nights and independent economic
  assert.ok(html.includes('Salida excluida'));
  assert.ok(!html.includes('name="paid"'));
  const table=renderToStaticMarkup(React.createElement(components.RateTable,{rates:[],date:'2026-11-01'}));
- assert.equal((table.match(/Sin tarifa/g)||[]).length,6);
+ assert.equal((table.match(/Sin tarifa/g)||[]).length,8);
 });
 test('historical economic detail preserves price and explains monetary balance without invented tariff history',async t=>{
  const f=await fixture(t),data=await (await f.api.GET(new Request('http://localhost/api/hotel',{headers:{Cookie:f.cookie}}))).json();

@@ -44,7 +44,7 @@ export function ReservationFields({data,date,initial,booking,terms}:{data:HotelD
   <label className="field"><span>Personas</span><Input name="pax" type="number" min="1" max={roomType==='Single'?1:2} defaultValue={booking?.pax??initial.inquiryPax??1} required/></label>
   <label className="field"><span>Llegada incluida</span><Input name="start" type="date" readOnly={split} value={start} onChange={e=>setStart(e.target.value)} required/></label>
   <label className="field"><span>Salida excluida</span><Input name="end" type="date" readOnly={split} value={end} min={start} onChange={e=>setEnd(e.target.value)} required/></label>
-  <label className="field"><span>Régimen</span><select className="control" name="regime" value={regime} onChange={e=>setRegime(e.target.value)}>{currentRegimes.map(regime=><option key={regime} value={regime}>{regimeLabel(regime)}</option>)}{booking?.regime==='PC'&&<option value="PC">{regimeLabel('PC')}</option>}</select></label>
+  <label className="field"><span>Régimen</span><select className="control" name="regime" value={regime} onChange={e=>setRegime(e.target.value)}>{currentRegimes.map(regime=><option key={regime} value={regime}>{regimeLabel(regime)}</option>)}</select></label>
   <label className="field"><span>Comida para MP</span><select className="control" name="meal" defaultValue={booking?.meal??'Cena'}><option>Cena</option><option>Almuerzo</option></select></label>
   <TextField label="Origen" name="source" value={booking?.source??initial.source??'Directa'} required/>
   <TextField label="Observaciones de reserva" name="note" value={booking?.note}/>

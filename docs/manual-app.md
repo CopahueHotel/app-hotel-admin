@@ -2,22 +2,26 @@
 
 Los comandos se ejecutan desde la raíz del proyecto. Ver [inicio rápido](../README.md), [alcance y pendientes](../ALCANCE.md) y [respaldos automáticos](respaldos.md).
 
+## Seña al crear una reserva
+
+En una reserva individual o un grupo nuevo, marcar **Registrar seña recibida ahora**, completar la fecha real, importe aplicado en ARS y medio/moneda. Requiere permiso de cobro. Reserva y seña se guardan en el mismo batch; un fallo de disponibilidad, precio, saldo o vuelto revierte todo. En grupos, el cobro pertenece a la cuenta común.
+
 ## Grupos de reservas
 
 Aplicar `npm.cmd run db:local` para agregar `0013_aromatic_tusk`. La migración crea grupos y vínculos vacíos; no convierte ni modifica reservas, clientes o movimientos anteriores.
 
 En **Reservas → Grupos → Nuevo grupo**, indicar el nombre, cantidad de personas previstas y contacto responsable. El contacto se busca en Clientes o se crea una sola vez desde el formulario; no se utiliza el nombre del grupo como si fuera una persona. Hay dos alternativas:
 
-- **Nuevas habitaciones:** cargar fechas, régimen, condición de pago y observaciones comunes; seleccionar habitaciones y distribuir personas respetando Single/Doble. Cada habitación permite excepciones de fechas, régimen y condiciones. La tarifa se calcula por cada noche; si falta, indicar un precio acordado por la estadía completa de esa habitación, con explicación y permiso de precios. Revisar y luego confirmar guarda todo junto. Un conflicto de disponibilidad, mantenimiento o precio revierte el grupo completo, incluyendo un contacto nuevo. No se cargan importes reales de ejemplo ni ocupantes inventados.
+- **Nuevas habitaciones:** cargar fechas, régimen, condición de pago y observaciones comunes; seleccionar habitaciones y distribuir personas respetando Single/Doble. Cada habitación permite excepciones de fechas, régimen y condiciones. Con permiso de precios, elegir **Por persona y noche** o **Total por toda la estadía** e ingresar un precio común y su explicación. Una persona sola en habitación doble cuenta como una persona. El desglose interno pondera personas y noches y conserva exactamente el total, incluso sus centavos. Sin ese permiso se conserva el circuito de tarifas por habitación. Revisar y luego confirmar guarda todo junto. Un conflicto de disponibilidad, mantenimiento o precio revierte el grupo completo, incluyendo un contacto nuevo. No se cargan importes reales de ejemplo ni ocupantes inventados.
 - **Reservas existentes:** elegir reservas sin grupo actual. Vincularlas no cambia su titular, datos de estadía, condiciones económicas, comidas, consumos o cobros. El contacto responsable del grupo puede ser distinto del titular de cada reserva. No se agrupan automáticamente por nombres similares.
 
-En **Ver grupos**, buscar por nombre y abrir la ficha lateral. Muestra habitaciones, fechas, estados y personas; con permiso de saldos, también alojamiento, cargos, cobros y saldo agregado de las reservas no canceladas. No es una cuenta común: cada cobro sigue registrándose desde la reserva correspondiente. No se reparten pagos entre habitaciones automáticamente.
+En **Ver grupos**, buscar por nombre y abrir la ficha lateral. Muestra habitaciones, fechas, estados y personas; con permiso de saldos, también alojamiento, cargos, cobros y saldo agregado de las reservas no canceladas. Es una cuenta común: **Registrar cobro del grupo** descuenta del total conjunto, sin elegir habitación. Los cobros individuales históricos también se descuentan y se conservan identificados. Se admite ARS o efectivo USD con el circuito de cotización y vuelto ya existente.
 
 **Modificar grupo** cambia solamente su ficha y personas previstas: no propaga cambios a estadías existentes. **Vincular reservas existentes** agrega reservas; **Quitar del grupo** exige motivo, conserva historial y no cancela la reserva ni libera sus noches. Una reserva no puede pertenecer simultáneamente a dos grupos. Los nombres de los ocupantes y sus restricciones se completan después por persona desde Alimentación; no se presume que el organizador ocupa cada habitación.
 
 El nombre del grupo aparece en Calendario, en el listado y la ficha de reserva, y en el CSV de Reservas. La búsqueda de Reservas también admite el grupo. Crear usa permisos de creación de reservas; vincular, quitar y modificar usan los de modificación. La búsqueda/alta del contacto y los precios especiales conservan sus permisos propios; no se concede acceso financiero nuevo. Los cambios identifican la sesión autenticada y usan control de versiones.
 
-Esta etapa no incorpora cobro común, modificaciones masivas de estadías ya creadas, cancelación colectiva ni entradas/salidas automáticas. Los descuentos y acuerdos especiales adicionales pueden gestionarse desde la ficha individual con sus permisos y reglas vigentes.
+La migración `0016_glossy_ego` habilita la cuenta común sin recalcular reservas ni pagos anteriores ni inventar contratos grupales históricos. Los grupos con precio común o cobros conservan su composición, fechas, personas, régimen y precio: su regularización económica o cancelación colectiva sigue pendiente. Se permiten notas, datos de alimentación y traslados que conservan el contrato. Las salidas se registran individualmente cuando el saldo del grupo está cancelado, sin cierres automáticos.
 
 ## Cambios de habitación y arrastre en Calendario
 
@@ -47,7 +51,7 @@ Aplicá `npm.cmd run db:local` antes de abrir esta versión. Se agrega la migrac
 
 En **Tarifas**, cargá las seis combinaciones de Single/Doble y Sin desayuno/Desayuno/Media pensión que correspondan. La unidad es **ARS por habitación y noche**. Las fechas desde/hasta de una tarifa son inclusivas; no se permiten vigencias superpuestas para la misma combinación. Una tarifa de cero sólo debe cargarse si ése es el precio decidido: no se crean tarifas de ejemplo.
 
-Aplicar la migración `0011_current_hotel_regimes` antes de usar Sin desayuno. Este régimen no incluye comidas; se pueden confirmar adicionales expresamente. Desayuno incluye solamente desayuno y MP incluye desayuno más almuerzo o cena según la elección vigente. Pensión completa queda disponible únicamente para conservar registros históricos; la migración no convierte reservas ni recalcula precios acordados.
+Aplicar la migración `0011_current_hotel_regimes` antes de usar Sin desayuno. Este régimen no incluye comidas; se pueden confirmar adicionales expresamente. Desayuno incluye solamente desayuno y MP incluye desayuno más almuerzo o cena según la elección vigente. Con `0016_glossy_ego`, Pensión completa vuelve a estar disponible para tarifas, reservas individuales y grupos e incluye desayuno, almuerzo y cena según la regla vigente de llegada incluida y salida excluida. No se cargan importes inventados ni se recalculan contratos anteriores.
 
 Desde **Reservas o Calendario → Consultar tarifas** podés consultar la fecha elegida. La carga de reservas también muestra ese cuadro y el detalle de cada noche, con llegada incluida y salida excluida. El servidor vuelve a validar la cotización; si los precios cambiaron, hay que actualizar los registros y revisar antes de guardar. Las tarifas guardadas dentro de una reserva no cambian al editar el tarifario.
 

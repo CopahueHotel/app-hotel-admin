@@ -13,7 +13,7 @@ export function RateTable({rates,date}:{rates:Rate[];date:string}) {
 export function RateFields({rate,date}:{rate?:Rate;date:string}) {
  return <><input type="hidden" name="id" value={rate?.id??''}/><input type="hidden" name="version" value={rate?.version??0}/>
   <label className="field"><span>Tipo de habitación</span><select className="control" name="type" defaultValue={rate?.type??'Doble'}><option>Single</option><option>Doble</option></select></label>
-  <label className="field"><span>Régimen</span><select className="control" name="regime" defaultValue={rate?.regime??'Desayuno'}>{currentRegimes.map(regime=><option key={regime} value={regime}>{regimeLabel(regime)}</option>)}{rate?.regime==='PC'&&<option value="PC">{regimeLabel('PC')}</option>}</select></label>
+  <label className="field"><span>Régimen</span><select className="control" name="regime" defaultValue={rate?.regime??'Desayuno'}>{currentRegimes.map(regime=><option key={regime} value={regime}>{regimeLabel(regime)}</option>)}</select></label>
   <label className="field"><span>Desde (inclusive)</span><Input name="start" type="date" defaultValue={rate?.start??date} required/></label>
   <label className="field"><span>Hasta (inclusive)</span><Input name="end" type="date" defaultValue={rate?.end??date} required/></label>
   <NumberField label="ARS por habitación y noche" name="amount" value={rate?rate.amount/100:undefined}/>

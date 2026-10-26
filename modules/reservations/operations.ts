@@ -1,3 +1,4 @@
+import { appendInitialPayment } from '@/modules/cash/initial-payment';
 import { barterSchema,blockSchema,bookingEditSchema,bookingSchema,prepareTerms,quoteStay,rateSchema,reservationNights,unblockSchema } from '@/lib/hotel-reservations';
 import type { Booking,BookingTerms,Rate } from '@/lib/hotel-types';
 import { planRate } from '@/modules/tariffs/operations';
@@ -56,7 +57,6 @@ export async function planReservation(db:D1Database,action:string,input:unknown,
  if(op.action==='bookingEdit'&&(!old||!['Confirmada','Alojado'].includes(old.status)))throw Error('Solo se pueden editar reservas confirmadas o en curso.');
  const customer=await reservationCustomer(db,bookingData,add,identity,key,old?.id,contact);
  if(old){bookingData.guest=old.guest;bookingData.phone=old.phone;}
- if(bookingData.regime==='PC'&&old?.regime!=='PC')throw Error('Pensión completa solo se conserva para reservas históricas.');
  const stored=old?await db.prepare('SELECT * FROM booking_terms WHERE booking=?').bind(key).first<BookingTerms>():null;
  const previous=stored??(old?{booking:key,base_amount:old.amount,tariff_total:null,discount_amount:0,discount_type:'Ninguno',discount_value:0,price_mode:'Historico',snapshot:'[]',payment_condition:'Sin especificar',benefit:'Habitual',reason:'',responsible:'',observation:'',barter_agreement:'',barter_status:'No corresponde',version:0}:null);
  if(op.action==='bookingEdit'&&previous?.version!==op.data.version)throw Error('HOT_VERSION');
@@ -74,5 +74,6 @@ export async function planReservation(db:D1Database,action:string,input:unknown,
  const columns=['booking',...Object.keys(priced.terms),'version'];
  add(`INSERT INTO booking_terms (${columns.join(',')}) VALUES (${columns.map(()=>'?').join(',')}) ON CONFLICT(booking) DO UPDATE SET ${columns.slice(1).map(c=>`${c}=excluded.${c}`).join(',')}`,key,...Object.values(priced.terms),version);
  if(old)add('UPDATE bookings SET guest=?,phone=?,room=?,start=?,end=?,pax=?,regime=?,meal=?,amount=?,source=?,note=? WHERE id=?',bookingData.guest,bookingData.phone,bookingData.room,bookingData.start,bookingData.end,bookingData.pax,bookingData.regime,bookingData.meal,priced.amount,bookingData.source,bookingData.note,key);
+ if(bookingData.deposit){if(old)throw Error('Registrá nuevos cobros desde la cuenta de la reserva.');appendInitialPayment(add,key,'Seña · '+bookingData.guest,bookingData.deposit,priced.amount,identity.name);}
  return {before:old?{booking:old,terms:previous}:undefined,after:{booking:key,customer:customer.id,inquiry:bookingData.inquiryId||null,...priced}};
 }

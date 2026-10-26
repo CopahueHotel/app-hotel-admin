@@ -1,6 +1,6 @@
 # Hotel · Administración
 
-Aplicación para gestionar reservas, tarifas, restaurante, stock, compras, proveedores, caja, personal y usuarios del hotel. Los regímenes vigentes son **Sin desayuno, Desayuno y Media pensión**.
+Aplicación para gestionar reservas, tarifas, restaurante, stock, compras, proveedores, caja, personal y usuarios del hotel. Los regímenes vigentes son **Sin desayuno, Desayuno, Media pensión y Pensión completa**.
 
 React/TypeScript con Vinext/Vite y persistencia SQLite mediante D1/Miniflare. Incluye cuentas individuales y permisos por módulo. Los saldos se derivan de movimientos; no constituye un sistema completo de facturación o contabilidad.
 

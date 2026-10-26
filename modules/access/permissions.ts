@@ -30,8 +30,9 @@ export type Identity = {id:string;name:string;email:string;roles:string[];permis
 export type PublicIdentity = Omit<Identity,'sessionHash'|'revision'>;
 export const can=(identity:Pick<Identity,'permissions'>|null|undefined,permission:string)=>!!identity?.permissions.includes(permission);
 export function operationPermissions(action:string,d:Record<string,unknown>):string[] {
+ if(action==='groupPayment')return ['reservations.collect'];
  if(action==='roomMove')return ['reservations.edit'];
- if(action==='groupCreate')return ['reservations.create',...(Array.isArray(d.rooms)?d.rooms.flatMap(row=>operationPermissions('booking',row as Record<string,unknown>)):[])];
+ if(action==='groupCreate')return ['reservations.create',...(d.pricing?['reservations.price']:[]),...(d.deposit?['reservations.collect']:[]),...(Array.isArray(d.rooms)?d.rooms.flatMap(row=>operationPermissions('booking',row as Record<string,unknown>)):[])];
  if(action==='groupSave')return d.id?['reservations.edit']:['reservations.create','reservations.edit'];
  if(action==='groupMembers')return ['reservations.edit'];
  const mapping:Record<string,string[]>={customerSave:[`customers.${d.id?'edit':'create'}`],inquirySave:[`customers.${d.id?'edit':'create'}`],booking:['reservations.create'],bookingEdit:['reservations.edit'],rate:[`tariffs.${d.id?'edit':'create'}`],block:['rooms.create'],unblock:['rooms.cancel'],barter:['reservations.special'],status:[d.status==='Cancelada'?'reservations.cancel':'reservations.edit'],room:['rooms.edit'],payment:['reservations.collect'],sale:['restaurant.create'],meal:['meals.edit'],guestProfile:['meals.edit'],mealChoice:['meals.edit'],mealSuspend:['meals.edit'],mealReactivate:['meals.edit'],mealServe:['meals.create'],mealPlan:['meals.create'],mealPlanStatus:['meals.edit'],beverageAccount:['restaurant.create'],beverageDispatch:['restaurant.create'],beverageSettle:['restaurant.edit'],beverageReturn:['restaurant.edit'],beverageCorrect:['restaurant.cancel'],purchaseDocument:['purchases.create'],purchaseReceive:['purchases.receive'],supplierPay:['purchases.pay'],expense:['purchases.create'],purchase:['purchases.create','purchases.receive'],payExpense:['purchases.pay'],stock:['stock.edit'],product:['stock.create'],close:['cash.close'],transfer:['cash.create'],movement:['cash.create'],settings:['settings.configure'],supplierProfile:[`suppliers.${d.id?'edit':'create'}`],deliveryGenerate:['suppliers.create'],deliveryEdit:[`suppliers.${d.status==='Cancelada'?'cancel':d.id?'edit':'create'}`],menuPlan:[`menu.${d.id?'edit':'create'}`],menuCopy:['menu.create'],menuActual:['menu.edit'],staffEmployee:[`personnel.${d.id?'edit':'create'}`],staffEvent:[`personnel.${d.status==='Cancelado'?'cancel':d.id?'edit':'create'}`],staffAttendance:['personnel.edit'],staffReport:['personnel.reports',`personnel.${d.id?'edit':'create'}`],userSave:['users.configure'],userReset:['users.configure'],rolePermissions:['users.configure']};
@@ -40,6 +41,7 @@ export function operationPermissions(action:string,d:Record<string,unknown>):str
  if(action==='guestProfile')return ['meals.edit'];
  const result=[...required];
  if(['booking','bookingEdit'].includes(action)){
+  if(action==='booking'&&d.deposit)result.push('reservations.collect');
   if(d.priceMode==='Acordado')result.push('reservations.price');
   if(d.priceMode!=='Conservar'&&d.discountType&&d.discountType!=='Ninguno')result.push('reservations.discount');
   if(d.priceMode!=='Conservar'&&d.benefit&&d.benefit!=='Habitual')result.push('reservations.special');

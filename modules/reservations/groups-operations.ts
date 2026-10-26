@@ -1,3 +1,5 @@
+import { initialPaymentSchema,appendInitialPayment } from '@/modules/cash/initial-payment';
+import { groupPricing,readGroupBalance } from '@/modules/reservations/group-account';
 import { z } from 'zod';
 import { groupCreateSchema,groupMembersSchema,groupSaveSchema } from '@/modules/reservations/groups-domain';
 import { newReservationContact } from '@/modules/customers/operations';
@@ -8,16 +10,18 @@ import type { HotelTables } from '@/lib/hotel-types';
 type Add=(sql:string,...values:unknown[])=>void;
 type Group=HotelTables['reservation_groups'];
 export const groupOperations=z.discriminatedUnion('action',[
+ z.object({action:z.literal('groupPayment'),data:initialPaymentSchema.extend({id:z.string().min(1),version:z.coerce.number().int().nonnegative()})}),
  z.object({action:z.literal('groupCreate'),data:groupCreateSchema}),
  z.object({action:z.literal('groupSave'),data:groupSaveSchema}),
  z.object({action:z.literal('groupMembers'),data:groupMembersSchema}),
 ]);
 export async function planGroup(db:D1Database,action:string,input:unknown,add:Add,identity:Identity){
- if(!['groupCreate','groupSave','groupMembers'].includes(action))return null;
+ if(!['groupCreate','groupSave','groupMembers','groupPayment'].includes(action))return null;
  const op=groupOperations.parse({action,data:input}),timestamp=new Date().toISOString();
  const id=op.action==='groupCreate'?crypto.randomUUID():op.data.id||crypto.randomUUID();
  const old=op.action!=='groupCreate'&&op.data.id?await db.prepare('SELECT * FROM reservation_groups WHERE id=?').bind(id).first<Group>():null;
  if(op.action!=='groupCreate'&&op.data.id&&(!old||old.version!==op.data.version))throw Error('HOT_VERSION');
+ if(op.action==='groupPayment'){const d=op.data;const limit=await readGroupBalance(db,id);if(!await db.prepare("SELECT b.id FROM bookings b JOIN group_bookings g ON g.booking=b.id WHERE g.group_id=? AND g.active=1 AND b.status IN ('Confirmada','Alojado') LIMIT 1").bind(id).first())throw Error('El grupo no tiene estadías activas.');add('UPDATE reservation_groups SET version=?,updated=?,updated_by=? WHERE id=?',d.version+1,timestamp,identity.id,id);appendInitialPayment(add,id,'Cobro de grupo · '+old!.name,d,limit,identity.name);return {after:{group:id}};}
  async function link(bookings:string[]){
   if(new Set(bookings).size!==bookings.length)throw Error('Una reserva no puede figurar dos veces.');
   for(const booking of bookings){
@@ -50,13 +54,17 @@ export async function planGroup(db:D1Database,action:string,input:unknown,add:Ad
  }
  if(new Set(op.data.rooms.map(row=>row.room)).size!==op.data.rooms.length)throw Error('Elegí cada habitación una sola vez.');
  if(op.data.rooms.reduce((sum,row)=>sum+row.pax,0)!==d.pax)throw Error('Las personas distribuidas deben coincidir con la cantidad del grupo.');
- const bookings:string[]=[];
- for(const row of op.data.rooms){
+ const pricing=op.data.pricing?groupPricing(op.data.pricing.mode,op.data.pricing.value,op.data.rooms):null;
+ const bookings:string[]=[];let total=0;
+ for(const [index,original] of op.data.rooms.entries()){
+ const row=pricing?{...original,priceMode:'Acordado' as const,amount:pricing.amounts[index]/100,reason:op.data.pricing!.reason,discountType:'Ninguno' as const,discountValue:0,benefit:'Habitual' as const}:original;
   const change=await planReservation(db,'booking',{...row,responsible:identity.name},add,identity,contact);
   if(!change||!('after' in change)||!change.after)throw Error('No se pudo preparar la reserva del grupo.');
   const booking=change.after.booking;
-  bookings.push(booking);
+  total+=change.after.amount;bookings.push(booking);
   add('INSERT INTO group_bookings (booking,group_id,active) VALUES (?,?,1)',booking,id);
  }
+ if(pricing)add('INSERT INTO group_prices VALUES (?,?,?,?,?,?,?,?)',id,op.data.pricing!.mode,Math.round(op.data.pricing!.value*100),pricing.units,pricing.total,op.data.pricing!.reason,identity.name,timestamp);
+ if(op.data.deposit)appendInitialPayment(add,id,'Seña de grupo · '+d.name,op.data.deposit,total,identity.name);
  return {after:{group:id,bookings}};
 }

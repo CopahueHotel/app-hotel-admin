@@ -25,11 +25,11 @@ test('Sin desayuno has a saved nightly price but no included meals; explicit add
  assert.equal((await f.post('rate',{...rate,id:r.id,version:0,amount:150})).status,200);
  assert.equal((await f.one('SELECT amount FROM bookings WHERE id=?',b.id)).amount,20000);
  assert.equal((await f.one('SELECT snapshot FROM booking_terms WHERE booking=?',b.id)).snapshot,saved.snapshot);
- assert.equal((await f.post('rate',{...rate,regime:'PC'})).status,400);
- assert.equal((await f.post('booking',{guest:'Obsolete',room:3,start:'2026-11-01',end:'2026-11-03',pax:2,regime:'PC',meal:'Cena',source:'Directa',priceMode:'Acordado',amount:100,reason:'Test'})).status,400);
+ assert.equal((await f.post('rate',{...rate,regime:'PC'})).status,200);
+ assert.equal((await f.post('booking',{guest:'Obsolete',room:3,start:'2026-11-01',end:'2026-11-03',pax:2,regime:'PC',meal:'Cena',source:'Directa',priceMode:'Acordado',amount:100,reason:'Test'})).status,200);
 });
 
-test('the migration preserves historical full-board prices and regimes while enforcing the three current tariff categories',t=>{
+test('0011 preserves historical full-board rows and its original three-category policy',t=>{
  const db=new DatabaseSync(':memory:');t.after(()=>db.close());
  const files=readdirSync('drizzle').filter(f=>f.endsWith('.sql')).sort();
  for(const file of files.filter(f=>!f.startsWith('0011')))db.exec(readFileSync('drizzle/'+file,'utf8'));

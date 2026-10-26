@@ -1,7 +1,7 @@
 import { accessGuard } from '@/lib/hotel-auth';
 import type { HotelData } from '@/lib/hotel-types';
 import { can,type Identity } from '@/modules/access/permissions';
-export const hotelTables=['cash_receipts','usd_closes','booking_room_plans','booking_room_moves','reservation_groups','group_bookings','booking_clients','rooms','bookings','products','stock_movements','sales','expenses','cash_movements','daily_closes','settings','meal_overrides','audit_log','room_rates','booking_terms','room_blocks','booking_guests','meal_suspensions','meal_services','meal_plans','beverage_accounts','beverage_dispatches','beverage_settlements','beverage_transfers','beverage_returns','beverage_corrections','purchase_documents','purchase_lines','purchase_receipts','supplier_payment_details','suppliers','supplier_deliveries','menu_plans','menu_actuals'] as const;
+export const hotelTables=['group_prices','cash_receipts','usd_closes','booking_room_plans','booking_room_moves','reservation_groups','group_bookings','booking_clients','rooms','bookings','products','stock_movements','sales','expenses','cash_movements','daily_closes','settings','meal_overrides','audit_log','room_rates','booking_terms','room_blocks','booking_guests','meal_suspensions','meal_services','meal_plans','beverage_accounts','beverage_dispatches','beverage_settlements','beverage_transfers','beverage_returns','beverage_corrections','purchase_documents','purchase_lines','purchase_receipts','supplier_payment_details','suppliers','supplier_deliveries','menu_plans','menu_actuals'] as const;
 export async function readHotelData(db:D1Database,identity:Identity){
  const has=(p:string)=>can(identity,p),reservation=has('reservations.view'),restaurant=has('restaurant.view'),food=has('meals.view')||has('menu.view')||restaurant;
  const financial=has('cash.view')||has('reports.view'),bookingMoney=reservation&&has('reservations.balance'),purchaseMoney=has('purchases.view')&&has('purchases.financial');
@@ -20,7 +20,7 @@ export async function readHotelData(db:D1Database,identity:Identity){
   queries.bookings='SELECT '+cols.map(col=>col==='guest'?'COALESCE(c.name,b.guest) AS guest':col==='phone'?'COALESCE(c.phone,b.phone) AS phone':'b.'+col).join(',')+' FROM bookings b LEFT JOIN booking_clients l ON l.booking=b.id LEFT JOIN customers c ON c.id=l.customer';
  }
  if(has('tariffs.view'))queries.room_rates='SELECT * FROM room_rates';
- if(bookingMoney)queries.booking_terms='SELECT * FROM booking_terms';
+ if(bookingMoney){queries.booking_terms='SELECT * FROM booking_terms';queries.group_prices='SELECT * FROM group_prices';}
  if(food||reservation){
   for(const t of ['booking_guests','meal_overrides','meal_suspensions','meal_services','meal_plans'] as const)queries[t]=`SELECT * FROM ${t}`;
  }
@@ -42,7 +42,7 @@ export async function readHotelData(db:D1Database,identity:Identity){
  }
  if(has('suppliers.view')){queries.suppliers='SELECT * FROM suppliers';queries.supplier_deliveries='SELECT * FROM supplier_deliveries';}
  if(financial){queries.cash_movements='SELECT * FROM cash_movements';queries.daily_closes='SELECT * FROM daily_closes';}
- else if(bookingMoney||purchaseMoney||restaurant&&has('restaurant.prices'))queries.cash_movements=`SELECT * FROM cash_movements WHERE ${[bookingMoney?"kind='Cobro' AND ref IN (SELECT id FROM bookings)":'',purchaseMoney?"kind='Pago' AND ref IN (SELECT id FROM expenses)":'',restaurant&&has('restaurant.prices')?"kind='Venta' AND ref IN (SELECT id FROM sales)":''].filter(Boolean).map(s=>'('+s+')').join(' OR ')}`;
+ else if(bookingMoney||purchaseMoney||restaurant&&has('restaurant.prices'))queries.cash_movements=`SELECT * FROM cash_movements WHERE ${[bookingMoney?"kind='Cobro' AND (ref IN (SELECT id FROM bookings) OR ref IN (SELECT id FROM reservation_groups))":'',purchaseMoney?"kind='Pago' AND ref IN (SELECT id FROM expenses)":'',restaurant&&has('restaurant.prices')?"kind='Venta' AND ref IN (SELECT id FROM sales)":''].filter(Boolean).map(s=>'('+s+')').join(' OR ')}`;
  if(queries.cash_movements)queries.cash_receipts="SELECT r.* FROM cash_receipts r WHERE EXISTS(SELECT 1 FROM json_each(r.movements) j JOIN ("+queries.cash_movements+") c ON c.id=j.value)";
  if(financial)queries.usd_closes='SELECT * FROM usd_closes';
  if(financial&&!queries.expenses)queries.expenses='SELECT * FROM expenses';
@@ -58,7 +58,7 @@ export async function readHotelData(db:D1Database,identity:Identity){
  if(has('meals.view'))allowed.push('guestProfile','meal','mealSuspend','mealServe','mealPlan','mealPlanStatus');
  if(has('menu.view'))allowed.push('menuPlan','menuCopy','menuActual');
  if(has('suppliers.view'))allowed.push('supplierProfile','deliveryGenerate','deliveryEdit');
- if(bookingMoney)allowed.push('groupCreate','groupSave','groupMembers','booking','bookingEdit','barter','status','payment');
+ if(bookingMoney)allowed.push('groupPayment','groupCreate','groupSave','groupMembers','booking','bookingEdit','barter','status','payment');
  if(has('tariffs.view'))allowed.push('rate');
  if(has('rooms.view'))allowed.push('block','unblock','room');
  if(restaurant&&has('restaurant.prices'))allowed.push('sale','beverageAccount','beverageDispatch','beverageSettle','beverageReturn','beverageCorrect');
