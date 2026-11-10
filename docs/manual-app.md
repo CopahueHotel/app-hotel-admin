@@ -2,6 +2,20 @@
 
 Los comandos se ejecutan desde la raíz del proyecto. Ver [inicio rápido](../README.md), [alcance y pendientes](../ALCANCE.md) y [respaldos automáticos](respaldos.md).
 
+## Estadísticas del hotel
+
+En **Informes → Estadísticas del hotel**, elegí mes/año y **Realizada · hasta ayer** o **Previsión · desde hoy**. La primera suma noches pasadas de estadías alojadas/finalizadas; la segunda suma noches de confirmadas/alojadas desde hoy. Confirmadas con fechas pasadas quedan advertidas para revisión, sin suponer un ingreso. **Movimientos e historial** conserva el informe económico anterior y sus filtros independientes.
+
+El panel muestra ocupación, habitaciones-noches, personas en reservas (no personas únicas), duración media completa, calendario mensual, comparación por día de semana y cinco fechas de mayor ocupación. Los desgloses de canales, regímenes, grupos/individuales y procedencia usan reservas por habitación y noches del período: los traslados no duplican estadías. Las proporciones de cada desglose corresponden a noches.
+
+La ocupación se calcula sobre habitaciones-noches disponibles; también se muestra el porcentaje sobre inventario total en **Criterios y límites de los datos**. El inventario usa las habitaciones actuales. Se descuentan bloqueos por fecha todavía vigentes; el estado global Fuera de servicio solo se aplica desde hoy, pues no tiene fecha histórica. Bloqueos liberados, cambios históricos de inventario e ingresos/salidas efectivos no registrados no se reconstruyen. No interpretar meses sin carga como evidencia de ausencia de huéspedes.
+
+La procedencia corresponde a la ficha actual del contacto: no se atribuye a todos sus acompañantes ni se deduce del teléfono. Los datos vacíos figuran como **Sin información**, sin excluirlos del total. El canal corresponde a la reserva, no al origen inicial del cliente.
+
+La consulta requiere `reports.view`; **Exportar estadísticas** requiere además `reports.export`, verificados por el servidor incluso con sesiones existentes. El CSV contiene el resumen, detalle diario, días de semana y desgloses; nunca nombres, emails, teléfonos, notas o identificadores de clientes. La API calcula agregados sin ampliar el acceso a Clientes ni enviar fichas al navegador. No hay cambios en reservas, importes, cobros ni base; no se requieren migraciones.
+
+Pendientes: comparativas entre períodos, clientes recurrentes, conversión de consultas, anticipación confiable de reserva, historial de capacidad y definición de componentes de alojamiento para ADR/RevPAR. Este panel no estima ingresos ni utilidad.
+
 ## Cama extra solicitada
 
 En una habitación doble, marcar **Solicitar una cama extra** permite alojar hasta tres personas. No cambia automáticamente la cantidad de huéspedes: completala expresamente. Se admite una cama extra por reserva; las habitaciones Single conservan su capacidad anterior. Confirmar físicamente la disponibilidad con el hotel: no se administra un inventario de camas extra.
@@ -34,6 +48,10 @@ El nombre del grupo aparece en Calendario, en el listado y la ficha de reserva, 
 La migración `0016_glossy_ego` habilita la cuenta común sin recalcular reservas ni pagos anteriores ni inventar contratos grupales históricos. Los grupos con precio común o cobros conservan su composición, fechas, personas, régimen y precio: su regularización económica o cancelación colectiva sigue pendiente. Se permiten notas, datos de alimentación y traslados que conservan el contrato. Las salidas se registran individualmente cuando el saldo del grupo está cancelado, sin cierres automáticos.
 
 ## Cambios de habitación y arrastre en Calendario
+
+El calendario muestra 14 días con filas compactas y una barra por reserva y tramo de habitación. El nombre completo, estado y condiciones se consultan al abrir la ficha; al pasar el puntero se muestra información adicional. **Hoy** vuelve a la fecha actual del hotel y **Ir a la fecha** usa la fecha de consulta del encabezado. **Ampliar calendario** aprovecha la ventana; **Reducir calendario** o Escape vuelve a la vista normal. Las fechas y habitaciones permanecen visibles al desplazar la grilla. En móvil se mantienen filas más altas para facilitar el uso táctil.
+
+Debajo de la agenda, **Bloquear habitación** abre la carga habitual. **Ver bloqueos por mantenimiento** despliega el historial y permite liberar bloqueos según permisos. Plegar ese panel no modifica la disponibilidad.
 
 Aplicar `npm.cmd run db:local` para agregar `0014_brief_inertia`. Se conserva la ocupación anterior y se agrega un plan inicial por reserva, sin cambiar importes, cobros, consumos, clientes ni grupos. No se inventan traslados históricos ni responsables.
 

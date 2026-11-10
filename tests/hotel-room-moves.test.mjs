@@ -108,6 +108,11 @@ test('calendar shows each room segment, permits drag only for confirmed editable
  const identity={id:'ui',name:'Operator',email:'ui@example.test',roles:[],permissions:['rooms.view','reservations.view','reservations.edit']};
  const html=renderToStaticMarkup(React.createElement(AccessProvider,{identity},React.createElement(CalendarScreen,{data,rooms:data.rooms,active:data.bookings,calendar:f.start,date:f.today,open:noop,setCalendar:noop,setDetail:noop,blockFor:()=>undefined,onMove:noop})));
  assert.ok(html.includes('Arrastrar para cambiar habitación sin cambiar fechas'));assert.ok(html.includes(`Hab. ${f.rooms[0]}`));assert.ok(html.includes(`Hab. ${f.rooms[1]}`));assert.ok(html.includes('Cambiar habitación'));
+ assert.ok(html.indexOf('aria-label="Agenda de habitaciones"')<html.indexOf('Ver bloqueos por mantenimiento'));
+ // A split stay is two bars, with the remaining nights starting in its new room.
+ assert.equal((html.match(/class="calendar-cell [^"]*booked/g)??[]).length,3);
+ assert.ok(html.includes('grid-column:2 / span 2'));assert.ok(html.includes('grid-column:4 / span 3'));
+ assert.ok(html.includes('Ampliar calendario'));assert.ok(html.includes('Disponibilidad de los próximos 14 días'));
  const detail=renderToStaticMarkup(React.createElement(AccessProvider,{identity},React.createElement(ReservationDetail,{data,booking:f.booking,date:f.today,busy:false,onEdit:noop,onStatus:noop,onCancel:noop,onPayment:noop,onSale:noop,onBarter:noop,onSaveMeals:async()=>{},onMove:noop})));
  assert.ok(detail.includes('Habitaciones de la estadía'));assert.ok(detail.includes('Cambiar habitación'));assert.ok(!detail.includes('Saldo pendiente'));
 });
