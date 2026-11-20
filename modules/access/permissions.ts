@@ -5,7 +5,7 @@ export const modules = {
  restaurant: ['view','create','edit','cancel','special','export','prices','price','collect','charge'],
  meals: ['view','create','edit','export'], menu: ['view','create','edit','export'],
  stock: ['view','create','edit','export','waste','adjust','configure'],
- purchases: ['view','create','receive','export','financial','pay'], suppliers: ['view','create','edit','cancel','export'],
+ purchases: ['view','create','edit','receive','export','financial','pay'], suppliers: ['view','create','edit','cancel','export'],
  cash: ['view','create','close','export'], personnel: ['view','create','edit','cancel','export','reports','special'],
  reports: ['view','export'], settings: ['view','configure'], users: ['view','configure'],
 } as const;
@@ -30,6 +30,7 @@ export type Identity = {id:string;name:string;email:string;roles:string[];permis
 export type PublicIdentity = Omit<Identity,'sessionHash'|'revision'>;
 export const can=(identity:Pick<Identity,'permissions'>|null|undefined,permission:string)=>!!identity?.permissions.includes(permission);
 export function operationPermissions(action:string,d:Record<string,unknown>):string[] {
+ if(action==='purchaseEdit'||action==='purchaseAttach')return ['purchases.view','purchases.financial','purchases.edit'];
  if(action==='groupPayment')return ['reservations.collect'];
  if(action==='roomMove')return ['reservations.edit'];
  if(action==='groupCreate')return ['reservations.create',...(d.pricing?['reservations.price']:[]),...(d.deposit?['reservations.collect']:[]),...(Array.isArray(d.rooms)?d.rooms.flatMap(row=>operationPermissions('booking',row as Record<string,unknown>)):[])];

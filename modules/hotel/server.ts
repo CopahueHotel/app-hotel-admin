@@ -22,6 +22,7 @@ import { z } from 'zod';
 import { customerOperations,planCustomer } from '@/modules/customers/operations';
 import { groupOperations,planGroup } from '@/modules/reservations/groups-operations';
 import { roomMoveOperations,planRoomMove } from '@/modules/reservations/room-move-operations';
+import { readHotelJson } from '@/modules/purchases/attachments';
 export const dynamic='force-dynamic';
 const operationSchema=z.discriminatedUnion('action',[
  ...roomMoveOperations.options,
@@ -51,7 +52,7 @@ export async function GET(req:Request){
 export async function POST(req:Request){
 const identity=await sessionIdentity(req);if(identity instanceof Response)return identity;const originError=checkOrigin(req);if(originError)return originError;
 let requestKey:string|undefined, fingerprint:string|undefined, requestDb:D1Database|undefined;
-try{const raw=await req.json() as {action:string;data:Record<string,unknown>};
+try{const raw=await readHotelJson(req) as {action:string;data:Record<string,unknown>};
 const {action,data:d}=operationSchema.parse({action:raw.action,data:{...raw.data,responsible:identity.name}});
 await authorizeOperation(database(),identity,action,d as Record<string,unknown>);const db=database();requestDb=db;await seed(db,env.APP_ENV==='test');
 requestKey=z.string().uuid().parse(req.headers.get('Idempotency-Key'));
@@ -69,7 +70,7 @@ const groupChange=await planGroup(db,action,d,add,identity);
 const roomChange=await planRoomMove(db,action,d,add,identity);
 const customerChange=await planCustomer(db,action,d,add,identity);
 const mealChange=await planMeals(db,action,d,add);
-const supplyChange=await planSupply(db,action,d,add);
+const supplyChange=await planSupply(db,action,d,add,identity);
 const planningChange=await planPlanning(db,action,d,add);
 const context=operationContext(db,add,actor);
 await reservationsPlan(action,d,context);
@@ -80,7 +81,7 @@ await stockPlan(action,d,context);
 await cashPlan(action,d,context);
 await settingsPlan(action,d,context);
 const change=userChange||roomChange||groupChange||reservationChange||customerChange||mealChange||supplyChange||planningChange;
-const auditInput=userChange?{...d,password:undefined}:d;
+const auditInput=userChange?{...d,password:undefined}:'files' in d?{...d,files:(d.files as {name:string;mime:string;content:string}[]).map(({name,mime})=>({name,mime}))}:d;
 add('INSERT INTO audit_log (id,created,actor,action,detail,actor_id) VALUES (?,?,?,?,?,?)',id(),new Date().toISOString(),actor,action,JSON.stringify(change?{input:auditInput,...change}:auditInput),identity.id);
 stmts.push(guard.end);await db.batch(stmts);return Response.json({ok:true});}catch(e:unknown){
  // A concurrent identical request can win after our first lookup or validation.

@@ -1,5 +1,19 @@
 # Manual de uso y desarrollo
 
+## Gastos, correcciones y comprobantes adjuntos
+
+En **Compras y gastos → Registrar gasto**, cargá los datos del comprobante; la observación está al final. **Productos** mantiene el circuito de recepción de mercadería. **Servicio/Administrativo** muestra **No requiere recepción de mercadería**: significa que no corresponde ingresar productos al inventario, no que falten existencias. Registrar el gasto o adjuntar una factura no registra un pago.
+
+**Subir comprobante** admite PDF, JPG, PNG y WebP, hasta 1 MB por archivo, cinco por carga y veinte por gasto. Se puede adjuntar al registrar, editar o pagar, o desde el botón de la fila. Los archivos del pago quedan vinculados también a ese movimiento. Se consultan y descargan dentro de **Recepción / historial**; conservan fecha y usuario y no se reemplazan ni borran desde la app. Una corrección se adjunta como archivo nuevo. Se almacenan privados en SQLite y quedan dentro del respaldo de la base, sin enlaces públicos ni archivos en Git. La API general devuelve solo metadatos; la descarga verifica sesión, permiso de consulta de compras e información financiera. Los archivos se descargan sin ejecución ni visualización automática.
+
+**Editar** requiere `purchases.edit`, consulta e información financiera. La migración lo incorpora a Administración y Gerente solo si conservaban permiso de crear gastos; Superadministrador lo recibe de su catálogo completo. No lo otorga a Stock ni Socio/Consulta; los roles personalizados se habilitan desde Usuarios y permisos. Guardar requiere motivo y conserva responsable original, valores anteriores/corregidos, fecha y usuario de la corrección. Una versión obsoleta se rechaza; la interfaz mantiene la versión con la que se abrió la edición.
+
+Se pueden corregir datos, importe y líneas sin reescribir pagos ni recepciones. El total no puede ser menor a lo pagado. No se cambia la actividad cuando existen pagos ni se mueve la fecha del gasto después de pagos o recepciones existentes. Un producto ya recibido no se quita ni se sustituye; su cantidad no puede ser menor a lo recibido. Las correcciones de costos no generan movimientos físicos ni revalúan stock. Recibir el saldo utiliza el botón **Recibir** habitual. Los gastos históricos sin detalle estructurado no se reinterpretan: admiten adjuntos, pero su edición requiere una regularización futura.
+
+En días cerrados solo se corrigen número, vencimiento, observación y adjuntos. Importe, fecha, proveedor, concepto, clasificación y líneas quedan protegidos. Las regularizaciones con devolución de dinero o mercadería y posteriores a cierres siguen fuera de este circuito.
+
+La migración nueva `0018_special_zeigeist` conserva registros anteriores, agrega adjuntos y versiones y mantiene las validaciones dentro del batch transaccional. Antes de publicarla, aplicar la migración en cada entorno con respaldo previo. El template Nginx eleva `client_max_body_size` a `8m` para transportar hasta cinco archivos codificados; actualizar esa directiva en los dos bloques de la app y validar `nginx -t` antes de recargar. Esa configuración del VPS no se modifica durante el desarrollo local. La política actual de respaldo externo copia Administración, no Pruebas.
+
 Los comandos se ejecutan desde la raíz del proyecto. Ver [inicio rápido](../README.md), [alcance y pendientes](../ALCANCE.md) y [respaldos automáticos](respaldos.md).
 
 ## Estadísticas del hotel

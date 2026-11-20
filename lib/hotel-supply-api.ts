@@ -1,14 +1,16 @@
 import { supplyOperations as operations0, planSupply as plan0 } from '@/modules/beverages/operations';
 import { supplyOperations as operations1, planSupply as plan1 } from '@/modules/purchases/operations';
 import { z } from 'zod';
+import { supplyErrors as purchaseErrors } from '@/modules/purchases/operations';
+import type { Identity } from '@/modules/access/permissions';
 export const supplyOperations=z.discriminatedUnion('action',[...operations0.options,...operations1.options]);
-export async function planSupply(db:D1Database,action:string,input:unknown,add:(sql:string,...v:unknown[])=>void){
+export async function planSupply(db:D1Database,action:string,input:unknown,add:(sql:string,...v:unknown[])=>void,identity?:Identity){
  const result0=await plan0(db,action,input,add);if(result0!==null)return result0;
- const result1=await plan1(db,action,input,add);if(result1!==null)return result1;
+ const result1=await plan1(db,action,input,add,identity);if(result1!==null)return result1;
 return null;}
 type Add=(sql:string,...values:unknown[])=>void;
 export const productRubros=['Bebidas','Alimentos','Limpieza','Amenities','Reutilizables'] as const;
-export const supplyErrors:Record<string,string>={
+export const supplyErrors:Record<string,string>={...purchaseErrors,
  HOT_DISPATCH_INVALID:'Revisá el destino, la condición de cobro, la bebida y su precio.',
  HOT_TABLE_CLOSED:'La cuenta de mesa ya está cerrada. Abrí una nueva para reutilizar la mesa.',
  HOT_TABLE_CHANGED:'Los consumos de la mesa cambiaron. Actualizá y volvé a revisar el cierre.',

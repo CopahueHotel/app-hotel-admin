@@ -1,6 +1,7 @@
 # Alcance de la primera versión
 
 ## Implementado
+- Gastos locales: botón Registrar gasto, observación al final, aclaración de servicios sin recepción de mercadería, adjuntos privados de factura y pago en SQLite (PDF/JPG/PNG/WebP hasta 1 MB), descarga autorizada y metadatos sin contenido en listados/auditoría. Edición con motivo, responsable e historial anterior/corregido, versiones y validación transaccional contra pagos, recepciones y cierres. Nueva migración `0018_special_zeigeist`, sin recalcular movimientos. Regularizaciones con devoluciones, gastos históricos sin detalle y borrado de archivos siguen pendientes; publicación y revisión del gerente pendientes.
 - Estadísticas locales en Informes: mes/año, ocupación realizada separada de previsión, noches por habitación desde el registro canónico, calendario mensual, días de semana, fechas de mayor ocupación, estadía promedio, canales, regímenes, grupos y procedencia del contacto con datos faltantes explícitos. API agregada y CSV bajo permisos de Informes; sin datos personales ni financieros en la respuesta estadística y sin migraciones. Capacidad histórica limitada al inventario actual y bloqueos todavía vigentes; revisión del gerente pendiente. Comparativas, recurrencia, conversión, anticipación y ADR/RevPAR pendientes.
 - Cama extra local: solicitud explícita en habitaciones dobles, hasta tres huéspedes, adicional acordado por noche o total (cero con explicación si ya está incluido), desglose y autor guardados, integración con tarifas, grupos, señas, comidas y traslados sin cobros ficticios. Migración `0017_slippery_the_liberteens` conserva históricos. Sin inventario de camas extra ni cambios de ocupación parciales durante la estadía; revisión local pendiente.
 - Grupos: precio común por persona/noche o total de estadía, contrato guardado y desglose exacto por personas-noches; cuenta común con señas/cobros ARS o USD, saldos derivados incluyendo pagos individuales históricos y consumos, prevención transaccional de sobrecobros. Seña opcional al crear reservas individuales o grupos. Pensión completa habilitada en tarifas, reservas y alimentación. Migración `0016_glossy_ego` sin recalcular históricos. Regularización de contratos grupales, cancelación colectiva y modificaciones económicas de grupos ya contratados pendientes.
@@ -50,7 +51,7 @@
 - Apertura real de saldos, stock, reservas y deudas.
 - Devoluciones, anulaciones y correcciones posteriores a cierres.
 - Gastos recurrentes automáticos (hoy solo clasificación fijo/variable).
-- Comprobantes adjuntos y respaldos automáticos.
+- Respaldos: mantener la copia externa y los ensayos de restauración; la incorporación de adjuntos no reemplaza la verificación operativa del respaldo.
 - Conversión de cajas/bultos y transferencias entre depósitos.
 - Recetas, costos de consumo, valoración de inventario y resultados.
 - Definición comercial de comidas de llegada/salida: se conserva [llegada, salida) para incluidos; la salida queda visible sin confirmar y se puede prever expresamente como adicional. No se inventa una inclusión contractual ni su precio.

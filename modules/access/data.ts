@@ -1,7 +1,7 @@
 import { accessGuard } from '@/lib/hotel-auth';
 import type { HotelData } from '@/lib/hotel-types';
 import { can,type Identity } from '@/modules/access/permissions';
-export const hotelTables=['booking_extra_beds','group_prices','cash_receipts','usd_closes','booking_room_plans','booking_room_moves','reservation_groups','group_bookings','booking_clients','rooms','bookings','products','stock_movements','sales','expenses','cash_movements','daily_closes','settings','meal_overrides','audit_log','room_rates','booking_terms','room_blocks','booking_guests','meal_suspensions','meal_services','meal_plans','beverage_accounts','beverage_dispatches','beverage_settlements','beverage_transfers','beverage_returns','beverage_corrections','purchase_documents','purchase_lines','purchase_receipts','supplier_payment_details','suppliers','supplier_deliveries','menu_plans','menu_actuals'] as const;
+export const hotelTables=['purchase_versions','purchase_attachments','booking_extra_beds','group_prices','cash_receipts','usd_closes','booking_room_plans','booking_room_moves','reservation_groups','group_bookings','booking_clients','rooms','bookings','products','stock_movements','sales','expenses','cash_movements','daily_closes','settings','meal_overrides','audit_log','room_rates','booking_terms','room_blocks','booking_guests','meal_suspensions','meal_services','meal_plans','beverage_accounts','beverage_dispatches','beverage_settlements','beverage_transfers','beverage_returns','beverage_corrections','purchase_documents','purchase_lines','purchase_receipts','supplier_payment_details','suppliers','supplier_deliveries','menu_plans','menu_actuals'] as const;
 export async function readHotelData(db:D1Database,identity:Identity){
  const has=(p:string)=>can(identity,p),reservation=has('reservations.view'),restaurant=has('restaurant.view'),food=has('meals.view')||has('menu.view')||restaurant;
  const financial=has('cash.view')||has('reports.view'),bookingMoney=reservation&&has('reservations.balance'),purchaseMoney=has('purchases.view')&&has('purchases.financial');
@@ -37,7 +37,7 @@ export async function readHotelData(db:D1Database,identity:Identity){
   queries.purchase_documents='SELECT * FROM purchase_documents';
   queries.purchase_lines=purchaseMoney?'SELECT * FROM purchase_lines':'SELECT id,expense,product,category,qty FROM purchase_lines';
   queries.purchase_receipts='SELECT * FROM purchase_receipts';
-  if(purchaseMoney)queries.supplier_payment_details='SELECT * FROM supplier_payment_details';
+  if(purchaseMoney){queries.supplier_payment_details='SELECT * FROM supplier_payment_details';queries.purchase_versions='SELECT * FROM purchase_versions';queries.purchase_attachments='SELECT id,expense,cash,name,mime,size,digest,created,actor,actor_id FROM purchase_attachments';}
   if(!queries.products)queries.products='SELECT id,name,category,unit,minimum,location FROM products';
  }
  if(has('suppliers.view')){queries.suppliers='SELECT * FROM suppliers';queries.supplier_deliveries='SELECT * FROM supplier_deliveries';}
@@ -62,7 +62,7 @@ export async function readHotelData(db:D1Database,identity:Identity){
  if(has('tariffs.view'))allowed.push('rate');
  if(has('rooms.view'))allowed.push('block','unblock','room');
  if(restaurant&&has('restaurant.prices'))allowed.push('sale','beverageAccount','beverageDispatch','beverageSettle','beverageReturn','beverageCorrect');
- if(purchaseMoney)allowed.push('purchase','expense','purchaseDocument','purchaseReceive','supplierPay','payExpense');
+ if(purchaseMoney)allowed.push('purchaseEdit','purchaseAttach','purchase','expense','purchaseDocument','purchaseReceive','supplierPay','payExpense');
  if(financial)allowed.push('close','movement','transfer');
  if(has('stock.view'))allowed.push('stock');
  if(allowed.length){const historyGuard=accessGuard(db,identity);const rows=await db.batch([historyGuard.start,db.prepare(`SELECT * FROM audit_log WHERE action IN (${allowed.map(()=>'?').join(',')})`).bind(...allowed),historyGuard.end]);data.audit_log=rows[1].results as HotelData['audit_log'];}
